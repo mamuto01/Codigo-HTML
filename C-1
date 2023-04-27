@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz de escolha de marca e tamanho</title>
+  <style>
+        body {
+            background-color: #f2f2f2;
+            margin: 0;
+            font-family: "Montserrat", sans-serif;
+        }
+        #nome-cliente-caixa {
+            background-color: #000;
+            border-radius: 23px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 490px;
+            text-align: center;
+        }
+    #nome-cliente-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    #quiz {
+        background-color: #000;
+        border-radius: 23px;
+        padding: 20px;
+        margin: auto;
+        max-width: 490px;
+        height: 250px;
+        text-align: center;
+        color: #fff;
+        font-size: 18px;
+        font-weight: bold;
+        font-style: italic;
+        position: relative;
+    }
+
+    #quiz h2 {
+        font-size: 24px;
+        font-weight: bold;
+        font-style: italic;
+        text-align: left;
+        margin: 0;
+        color: #ffa500;
+    }
+
+    #quiz button {
+        background-color: #008000;
+        border-radius: 30px;
+        color: #fff;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 10px 20px;
+        margin-left: auto;
+        margin-right: auto;
+        border: none;
+        cursor: pointer;
+    }
+
+    #quiz button:hover {
+        background-color: #005700;
+    }
+
+    .opcao {
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    .pergunta {
+        display: none;
+    }
+
+    .pergunta-atual {
+        display: block;
+    }
+
+    #botao-resultado {
+        display: none;
+        margin-top: 20px;
+    }
+
+    #botao-continuar {
+        display: none;
+    }
+    
+    @media screen and (max-width: 600px) {
+        #quiz, #nome-cliente-caixa {
+            width: 90%;
+        }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="nome-cliente-caixa">
+    <h2 style="font-family: Montserrat, sans-serif; font-weight: bold; font-style: italic; color: white; font-size: 24px;">Antes de começarmos, Digite seu nome:</h2><input type="text" id="nome-cliente-input" placeholder="Digite seu nome aqui" style="font-family: Montserrat, sans-serif; font-style: italic; font-size: 16px; border-radius: 30px; background-color: gray; padding: 5px;"> <button id="nome-cliente-btn" style="font-family: Montserrat, sans-serif; font-weight: bold; font-size: 16px; background-color: #008000; border-radius: 30px; color: #fff; padding: 10px 20px; margin-left: auto; margin-right: auto; border: none; cursor: pointer;">Continuar</button>
+  </div>
+  <div id="quiz" style="display: none;">
+    <div id="quiz">
+      <h2 id="cabecalho-pergunta">Qual a sua marca de preferência?</h2>
+      <div class="pergunta pergunta-1 pergunta-atual">
+        <div class="opcao">
+          <input type="radio" id="id=" name="marca" value="lacoste"> <label for="lacoste">Lacoste</label>
+        </div>
+        <div class="opcao">
+          <input type="radio" id="nike" name="marca" value="nike"> <label for="nike">Nike</label>
+        </div>
+        <div class="opcao">
+          <input type="radio" id="adidas" name="marca" value="adidas"> <label for="adidas">Adidas</label>
+        </div>
+        <div class="opcao">
+          <input type="radio" id="qualquer" name="marca" value="qualquer"> <label for="qualquer">Qualquer uma</label>
+        </div>
+      </div>
+      <div class="pergunta pergunta-2">
+        <div class="opcao">
+          <input type="radio" id="m" name="tamanho" value="M"> <label for="m">M</label>
+        </div>
+        <div class="opcao">
+          <input type="radio" id="g" name="tamanho" value="G"> <label for="g">G</label>
+        </div>
+        <div class="opcao">
+          <input type="radio" id="gg" name="tamanho" value="GG"> <label for="gg">GG</label>
+        </div>
+      </div><button type="button" id="botao-continuar" onclick="proximaPergunta()">Continuar</button> <button type="button" id="botao-resultado" onclick="exibirResultado()">Ver Resultado</button>
+    </div>
+    <script>
+    let nomeCliente;
+
+  function isUserNameStored() {
+    return localStorage.getItem("nomeUsuario") !== null;
+  }
+
+  function storeUserName(nome) {
+    localStorage.setItem("nomeUsuario", nome);
+  }
+
+  function askUserName() {
+    if (!isUserNameStored()) {
+      nomeCliente = prompt("Por favor, digite seu nome:");
+      if (nomeCliente) {
+        storeUserName(nomeCliente);
+      }
+    } else {
+      nomeCliente = localStorage.getItem("nomeUsuario");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    askUserName();
+    document.getElementById('nome-cliente-input').value = nomeCliente;
+    document.getElementById('nome-cliente-caixa').style.display = 'none';
+    document.getElementById('quiz').style.display = 'block';
+  });
+    var perguntaAtual = 1;
+    var totalPerguntas = 2;
+    function proximaPergunta() {
+        var perguntaAtualElement = document.querySelector('.pergunta-' + perguntaAtual);
+        perguntaAtualElement.classList.remove('pergunta-atual');
+
+        if (perguntaAtual < totalPerguntas) {
+            perguntaAtual++;
+            var novaPerguntaElement = document.querySelector('.pergunta-' + perguntaAtual);
+            novaPerguntaElement.classList.add('pergunta-atual');
+
+            var cabecalhoPergunta = document.getElementById('cabecalho-pergunta');
+            if (perguntaAtual === 2) {
+                cabecalhoPergunta.textContent = "Qual é o tamanho da camisa que você veste?";
+            }
+            document.getElementById('botao-continuar').style.display = 'none';
+        } else {
+            document.getElementById('botao-continuar').style.display = 'none';
+            document.getElementById('botao-resultado').style.display = 'block';
+        }
+    }
+
+    function saudacao() {
+        var dataAtual = new Date();
+        var hora = dataAtual.getHours();
+        var saudacao;
+
+        if (hora >= 6 && hora < 12) {
+            saudacao = "Bom%20dia";
+        } else if (hora >= 12 && hora < 18) {
+            saudacao = "Boa%20tarde";
+        } else {
+            saudacao = "Boa%20noite";
+        }
+
+                return saudacao;
+    }
+
+    document.querySelectorAll('input[type="radio"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            document.getElementById('botao-continuar').style.display = 'block';
+        });
+    });
+
+    function exibirResultado() {
+    var marcaSelecionada = document.querySelector('input[name="marca"]:checked').value;
+    var tamanhoSelecionado = document.querySelector('input[name="tamanho"]:checked').value;
+
+    var linkWhatsapp = "https://api.whatsapp.com/send?phone=5566992481925&text=" + saudacao() + "%20eu%20gostaria%20de%20ver%20Camisa%20Peruana%20da%20";
+
+    if (marcaSelecionada === "qualquer") {
+        linkWhatsapp += "qualquer%20marca";
+    } else {
+        linkWhatsapp += encodeURIComponent(marcaSelecionada.charAt(0).toUpperCase() + marcaSelecionada.slice(1));
+    }
+
+    linkWhatsapp += "%20tamanho%20" + encodeURIComponent(tamanhoSelecionado) + ".%0A%0A*Enviado%20por%20" + encodeURIComponent(nomeCliente) + "*";
+
+    // Verifique se o aplicativo WhatsApp está instalado no dispositivo
+    var isWhatsAppInstalled = false;
+    var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        // Dispositivos iOS
+        isWhatsAppInstalled = window.navigator.standalone;
+    } else if (/Android/.test(userAgent)) {
+        // Dispositivos Android
+        isWhatsAppInstalled = "whatsapp" in window.navigator;
+    }
+
+    if (isWhatsAppInstalled) {
+        // Use o esquema de URL "whatsapp://" para abrir diretamente o aplicativo
+        linkWhatsapp = linkWhatsapp.replace("https://api.whatsapp.com/send", "whatsapp://send");
+    }
+
+    window.location.href = linkWhatsapp;
+}
+
+
+
+
+
+    document.getElementById('botao-resultado').addEventListener('click', exibirResultado);
+    </script>
+  </div>
+</body>
+</html>
