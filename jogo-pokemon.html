@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2b2b3d">
+<title>Aventura Pokémon</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; touch-action:none; overscroll-behavior:none; }
+  body {
+    background: radial-gradient(circle at 50% 30%, #3a3a52 0%, #23232f 70%);
+    font-family: 'Courier New', ui-monospace, monospace;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-user-select:none; user-select:none;
+  }
+
+  /* ---------- console (shell) ---------- */
+  #shell {
+    background: linear-gradient(160deg, #4a4a68, #34344a 60%, #2b2b3d);
+    border-radius: 18px 18px 48px 18px;
+    padding: 14px 14px 18px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.15);
+    display:flex; flex-direction:column; gap:10px;
+    max-width:100vw; max-height:100dvh;
+  }
+  #brand {
+    color:#9a9ab8; font-size:11px; font-weight:bold; letter-spacing:3px;
+    text-align:center; text-shadow:0 1px 0 rgba(0,0,0,.6);
+  }
+  #bezel {
+    background:#1a1a24; border-radius:10px; padding:12px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.8);
+    position:relative; display:flex; align-items:center; justify-content:center;
+  }
+  #led {
+    position:absolute; top:10px; left:10px; width:7px; height:7px; border-radius:50%;
+    background:#ff4d4d; box-shadow:0 0 6px #ff4d4d;
+  }
+  #screenwrap { position:relative; line-height:0; }
+  canvas#tela {
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background:#88c070; border-radius:3px;
+  }
+
+  /* ---------- dialog box ---------- */
+  #dialog {
+    position:absolute; left:2%; right:2%; bottom:3%;
+    background:#f8f8f0; color:#202030;
+    border:3px solid #202030; border-radius:6px;
+    box-shadow: inset 0 0 0 2px #f8f8f0, inset 0 0 0 4px #7890a8;
+    padding:7px 9px; min-height:34%;
+    font-weight:bold; line-height:1.35;
+    display:none; white-space:pre-wrap;
+  }
+  #dialog.aberto { display:block; }
+  #seta {
+    position:absolute; right:8px; bottom:4px; color:#c03028;
+    animation: pisca .6s steps(1) infinite;
+  }
+  @keyframes pisca { 50% { opacity:0; } }
+
+  /* ---------- title screen ---------- */
+  #titulo {
+    position:absolute; inset:0; border-radius:3px;
+    background: linear-gradient(#f8e8a0 0 62%, #78c850 62% 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; text-align:center; z-index:5;
+  }
+  #titulo h1 {
+    color:#c03028; letter-spacing:1px; line-height:1.1;
+    text-shadow: 2px 2px 0 #f8d030, 4px 4px 0 rgba(32,32,48,.35);
+  }
+  #titulo .sub { color:#385028; font-weight:bold; }
+  #titulo .start { color:#202030; font-weight:bold; animation:pisca 1s steps(1) infinite; }
+  #bola {
+    width:34px; height:34px; border-radius:50%;
+    background: linear-gradient(#e04838 0 45%, #202030 45% 55%, #f8f8f0 55% 100%);
+    border:3px solid #202030; position:relative;
+  }
+  #bola::after {
+    content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:9px; height:9px; border-radius:50%; background:#f8f8f0; border:3px solid #202030;
+  }
+
+  /* ---------- controls ---------- */
+  #controles { display:flex; align-items:center; justify-content:space-between; padding:0 6px; }
+  #dpad {
+    position:relative; width:118px; height:118px; flex:none;
+  }
+  .dbtn {
+    position:absolute; width:40px; height:40px; background:#23232f;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+    color:#8a8aa8; font-size:15px;
+  }
+  .dbtn:active, .dbtn.on { background:#191922; transform:translateY(1px); }
+  #d-up    { left:39px; top:0;    border-radius:8px 8px 0 0; }
+  #d-down  { left:39px; top:78px; border-radius:0 0 8px 8px; }
+  #d-left  { left:0;    top:39px; border-radius:8px 0 0 8px; }
+  #d-right { left:78px; top:39px; border-radius:0 8px 8px 0; }
+  #d-mid   { left:39px; top:39px; border-radius:0; }
+  #abtns { display:flex; gap:14px; align-items:flex-end; flex:none; transform:rotate(-18deg); }
+  .rbtn {
+    width:52px; height:52px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #d05a6a, #a02838);
+    border:none; color:#ffd9de; font-weight:bold; font-size:16px;
+    font-family:inherit;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.35), 0 3px 6px rgba(0,0,0,.5);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rbtn:active { transform:translateY(2px); box-shadow: inset 0 -2px 0 rgba(0,0,0,.35); }
+  .rbtn span { pointer-events:none; }
+  #dica {
+    color:#7a7a98; font-size:10px; text-align:center; letter-spacing:1px;
+  }
+
+  /* landscape: controls beside the screen */
+  @media (orientation: landscape) and (max-height: 520px) {
+    #shell { flex-direction:row; align-items:center; border-radius:24px; gap:16px; }
+    #brand, #dica { display:none; }
+    #controles { flex-direction:column; gap:18px; padding:0; }
+    #abtns { transform:rotate(0); }
+  }
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="brand">POCKET AVENTURA ・ COLOR</div>
+  <div id="bezel">
+    <div id="led"></div>
+    <div id="screenwrap">
+      <canvas id="tela" width="160" height="144"></canvas>
+      <div id="titulo">
+        <div id="bola"></div>
+        <h1>AVENTURA<br>POKÉMON</h1>
+        <div class="sub">Edição Especial</div>
+        <div class="start">PRESSIONE A</div>
+      </div>
+      <div id="dialog"><span id="dtexto"></span><span id="seta">▼</span></div>
+    </div>
+  </div>
+  <div id="controles">
+    <div id="dpad">
+      <div class="dbtn" id="d-up"    data-dir="up">▲</div>
+      <div class="dbtn" id="d-left"  data-dir="left">◀</div>
+      <div class="dbtn" id="d-mid"></div>
+      <div class="dbtn" id="d-right" data-dir="right">▶</div>
+      <div class="dbtn" id="d-down"  data-dir="down">▼</div>
+    </div>
+    <div id="abtns">
+      <button class="rbtn" id="btn-b"><span>B</span></button>
+      <button class="rbtn" id="btn-a"><span>A</span></button>
+    </div>
+  </div>
+  <div id="dica">A: FALAR / OK &nbsp;・&nbsp; B: CORRER</div>
+</div>
+
+<script>
+'use strict';
+
+/* =====================================================
+   PERSONALIZE AQUI as mensagens do jogo
+   ===================================================== */
+const CONFIG = {
+  // O que a garota do jardim de flores diz (cada item = uma "página")
+  mensagensNPC: [
+    "Oi! Que bom te ver por aqui! ♥",
+    "Sabia que este jogo foi feito especialmente para alguém muito especial?",
+    "...e essa pessoa é VOCÊ! ♥"
+  ],
+  placa1: "PONTA DO PRADO\n\nCuidado com o mato alto!",
+  placa2: "LAGO ESPELHO\n\nProibido pescar MAGIKARP.",
+  itemMsg: "Você encontrou um\n♥ CORAÇÃO ♥\n\nGuarde com carinho!",
+  encontros: [
+    "Um POKÉMON selvagem apareceu...\n\n...mas ficou com vergonha e fugiu!",
+    "Farfalhar no mato...\n\nEra só o vento. Ufa!",
+    "Você quase pisou num RATTATA.\nEle nem ligou."
+  ]
+};
+
+/* ---------- mapa ----------
+   R árvore  G grama  T mato alto  W água  P caminho
+   F flor    S placa1  Z placa2   X cerca
+   N garota  B item    @ início do jogador                */
+const MAPA_RAW = [
+"RRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+"RRGGGGGGGGGGGPPGGGGGTTTTTTRR",
+"RGGGGGGGGGGGGPPGGGGGTTTTTTRR",
+"RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
+"RGFFNFFGGGGGGPPGGGGGTTBTTTRR",
+"RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
+"RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
+"RGGGGGGGGGGGGPPGGGGGGTTTTGRR",
+"RGGGGGGGSGGGGPPGGGGGGGGGGGRR",
+"RPPPPPPPPPPPPP@PPPPPPPPPPGRR",
+"RPPPPPPPPPPPPPPPPPPPPPPPPGRR",
+"RGGGGGGGGGGGGPPGGGGGGGPPGGRR",
+"RGGGGGGGGGGGGPPGGGGGGGPPGGRR",
+"RGGWWWWWWGGGGPPGGGXXXXGPPGRR",
+"RGZWWWWWWGGGGPPGGGXGGGGPPGRR",
+"RGGWWWWWWGGGGPPGGGGGGGGPPGRR",
+"RGGWWWWWWGGGGPPGGGXGGGGPPGRR",
+"RGGGWWWWGGGGGPPGGGXXXXGPPGRR",
+"RGGGGGGGGGGGGPPGGGGGGGGPPGRR",
+"RGGGGGGGGGGGGPPPPPPPPPPPPGRR",
+"RGGGGGGGGGGGGGGGGGGGGGGGGGRR",
+"RRRRRRRRRRRRRRRRRRRRRRRRRRRR"
+];
+
+const TAM = 16;                      // tamanho do tile em px
+const TELA_W = 160, TELA_H = 144;    // resolução clássica de Game Boy
+
+/* ---------- paleta e sprites (pixel art em texto) ---------- */
+const PAL = {
+  k:'#181820', r:'#e04838', s:'#f8c088', h:'#402818',
+  b:'#3868b0', o:'#584030', w:'#f8f8f0',
+  H:'#a04020', p:'#e878a0', d:'#c03028'
+};
+
+const SPR_DOWN_STAND = [
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkkk..",
+"...khsssssshk...",
+"...kskssssksk...",
+"...kssssssssk...",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...kskrrrrksk...",
+"....kbbbbbbk....",
+"....kbbkkbbk....",
+"....kookkook....",
+"....kkk..kkk...."
+];
+const SPR_DOWN_WALK = [
+"................",
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkkk..",
+"...khsssssshk...",
+"...kskssssksk...",
+"...kssssssssk...",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"....kbbbbbbk....",
+"...kbbk..kbbk...",
+"...kook..kook...",
+"...kkk....kkk..."
+];
+const SPR_UP_STAND = [
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkkk..",
+"...khhhhhhhhk...",
+"...khhhhhhhhk...",
+"....khhhhhhk....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...kskrrrrksk...",
+"....kbbbbbbk....",
+"....kbbkkbbk....",
+"....kookkook....",
+"....kkk..kkk...."
+];
+const SPR_UP_WALK = [
+"................",
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkkk..",
+"...khhhhhhhhk...",
+"...khhhhhhhhk...",
+"....khhhhhhk....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"....kbbbbbbk....",
+"...kbbk..kbbk...",
+"...kook..kook...",
+"...kkk....kkk..."
+];
+const SPR_LEFT_STAND = [
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkk...",
+"...ksskshhhhk...",
+"...ksssshhhhk...",
+"....kssshhhk....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrsk...",
+"....kbbbbbbk....",
+".....kbbbbk.....",
+"....koooook.....",
+"....kkkkkk......"
+];
+const SPR_LEFT_WALK = [
+"................",
+"................",
+".....kkkkkk.....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"...krrrrrrrrk...",
+"..kkkkkkkkkkk...",
+"...ksskshhhhk...",
+"...ksssshhhhk...",
+"....kssshhhk....",
+"....krrrrrrk....",
+"...krrrrrrrrk...",
+"....kbbbbbbk....",
+"...kbbk.kbbk....",
+"..kook..kook....",
+"..kkk....kkk...."
+];
+const SPR_NPC = [
+"................",
+".....kkkkkk.....",
+"....khhhhhhk....",
+"...khhhhhhhhk...",
+"..khhhhhhhhhhk..",
+"..khhsssssshhk..",
+"..khsksssskshk..",
+"..khsssssssshk..",
+"..khkppppppkhk..",
+"..khpppppppphk..",
+"..kppppppppppk..",
+"..ksppppppppsk..",
+"..kppppppppppk..",
+"..kkkkkkkkkkkk..",
+"....koo..ook....",
+"................"
+];
+
+function espelhar(grid){ return grid.map(l => l.split('').reverse().join('')); }
+
+function fazerSprite(grid, troca){
+  const c = document.createElement('canvas');
+  c.width = TAM; c.height = TAM;
+  const g = c.getContext('2d');
+  for (let y = 0; y < grid.length; y++){
+    const linha = grid[y];
+    for (let x = 0; x < linha.length; x++){
+      let ch = linha[x];
+      if (ch === '.') continue;
+      if (troca && troca[ch]) ch = troca[ch];
+      g.fillStyle = PAL[ch] || '#ff00ff';
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  return c;
+}
+
+const SPRITES = {
+  down:  [fazerSprite(SPR_DOWN_STAND), fazerSprite(SPR_DOWN_WALK)],
+  up:    [fazerSprite(SPR_UP_STAND),   fazerSprite(SPR_UP_WALK)],
+  left:  [fazerSprite(SPR_LEFT_STAND), fazerSprite(SPR_LEFT_WALK)],
+  right: [fazerSprite(espelhar(SPR_LEFT_STAND)), fazerSprite(espelhar(SPR_LEFT_WALK))]
+};
+const SPRITE_NPC = fazerSprite(SPR_NPC, { h:'H' });
+
+/* ---------- tiles desenhados em código ---------- */
+function novoTile(desenho){
+  const c = document.createElement('canvas');
+  c.width = TAM; c.height = TAM;
+  desenho(c.getContext('2d'));
+  return c;
+}
+function baseGrama(g){
+  g.fillStyle = '#78b850'; g.fillRect(0,0,16,16);
+  g.fillStyle = '#68a844';
+  [[2,3],[7,1],[12,4],[4,9],[10,8],[14,11],[1,13],[8,13],[13,14],[5,6]]
+    .forEach(([x,y]) => { g.fillRect(x,y,2,1); g.fillRect(x,y+1,1,1); });
+}
+const TILES = {
+  G: novoTile(baseGrama),
+  P: novoTile(g => {
+    g.fillStyle = '#e0c078'; g.fillRect(0,0,16,16);
+    g.fillStyle = '#c8a860';
+    [[3,2],[9,5],[13,1],[2,8],[7,10],[12,12],[5,14],[14,9]]
+      .forEach(([x,y]) => g.fillRect(x,y,2,2));
+    g.fillStyle = '#d4b46c'; g.fillRect(0,0,16,1);
+  }),
+  R: novoTile(g => {
+    baseGrama(g);
+    g.fillStyle = '#204028'; g.fillRect(2,1,12,11); g.fillRect(1,3,14,8);
+    g.fillStyle = '#2e6034';
+    g.fillRect(3,2,10,9); g.fillRect(2,4,12,6);
+    g.fillStyle = '#3e7c42';
+    g.fillRect(4,3,4,2); g.fillRect(9,5,4,2); g.fillRect(3,7,3,2); g.fillRect(8,8,3,1);
+    g.fillStyle = '#402818'; g.fillRect(6,11,4,4);
+    g.fillStyle = '#584030'; g.fillRect(7,11,2,4);
+  }),
+  T: novoTile(g => {
+    baseGrama(g);
+    g.fillStyle = '#3e8c3e';
+    for (let i = 0; i < 4; i++){
+      const x = i*4;
+      g.fillRect(x,6,1,8); g.fillRect(x+1,4,1,10);
+      g.fillRect(x+2,7,1,7); g.fillRect(x+3,5,1,9);
+    }
+    g.fillStyle = '#57a04c';
+    for (let i = 0; i < 4; i++){ g.fillRect(i*4+1,4,1,3); g.fillRect(i*4+3,5,1,3); }
+  }),
+  W: [
+    novoTile(g => {
+      g.fillStyle = '#4890d8'; g.fillRect(0,0,16,16);
+      g.fillStyle = '#3878c0'; g.fillRect(0,0,16,2);
+      g.fillStyle = '#90c8f0';
+      g.fillRect(2,4,4,1); g.fillRect(9,7,4,1); g.fillRect(4,11,4,1); g.fillRect(11,13,3,1);
+    }),
+    novoTile(g => {
+      g.fillStyle = '#4890d8'; g.fillRect(0,0,16,16);
+      g.fillStyle = '#3878c0'; g.fillRect(0,0,16,2);
+      g.fillStyle = '#90c8f0';
+      g.fillRect(4,5,4,1); g.fillRect(7,8,4,1); g.fillRect(2,12,4,1); g.fillRect(10,3,3,1);
+    })
+  ],
+  F: [
+    novoTile(g => {
+      baseGrama(g);
+      g.fillStyle = '#e04838';
+      g.fillRect(6,3,2,2); g.fillRect(4,5,2,2); g.fillRect(8,5,2,2); g.fillRect(6,7,2,2);
+      g.fillStyle = '#f8d030'; g.fillRect(6,5,2,2);
+      g.fillStyle = '#f8f8f0'; g.fillRect(11,10,2,2); g.fillRect(2,11,2,2);
+    }),
+    novoTile(g => {
+      baseGrama(g);
+      g.fillStyle = '#e04838';
+      g.fillRect(5,4,2,2); g.fillRect(9,4,2,2); g.fillRect(5,8,2,2); g.fillRect(9,8,2,2);
+      g.fillStyle = '#f8d030'; g.fillRect(7,6,2,2);
+      g.fillStyle = '#f8f8f0'; g.fillRect(12,11,2,2); g.fillRect(3,10,2,2);
+    })
+  ],
+  S: novoTile(g => {
+    baseGrama(g);
+    g.fillStyle = '#181820'; g.fillRect(2,2,12,8);
+    g.fillStyle = '#a06a32'; g.fillRect(3,3,10,6);
+    g.fillStyle = '#7a4e22'; g.fillRect(4,4,8,1); g.fillRect(4,6,8,1);
+    g.fillStyle = '#181820'; g.fillRect(6,10,4,5);
+    g.fillStyle = '#7a4e22'; g.fillRect(7,10,2,5);
+  }),
+  X: novoTile(g => {
+    baseGrama(g);
+    g.fillStyle = '#181820'; g.fillRect(0,4,16,4); g.fillRect(2,2,3,12); g.fillRect(11,2,3,12);
+    g.fillStyle = '#a06a32'; g.fillRect(0,5,16,2); g.fillRect(3,3,1,10); g.fillRect(12,3,1,10);
+    g.fillStyle = '#c08848'; g.fillRect(3,3,1,2); g.fillRect(12,3,1,2);
+  }),
+  B: novoTile(g => {
+    baseGrama(g);
+    g.fillStyle = '#181820'; g.fillRect(4,3,8,10); g.fillRect(3,4,10,8);
+    g.fillStyle = '#e04838'; g.fillRect(4,4,8,3); g.fillRect(5,3,6,1);
+    g.fillStyle = '#f8f8f0'; g.fillRect(4,9,8,3); g.fillRect(5,12,6,1);
+    g.fillStyle = '#181820'; g.fillRect(3,7,10,2);
+    g.fillStyle = '#f8f8f0'; g.fillRect(7,7,2,2);
+  })
+};
+TILES.Z = TILES.S;
+
+/* sobreposição do mato alto (metade de baixo) para o jogador "afundar" nele */
+const MATO_TOPO = novoTile(g => {
+  g.clearRect(0,0,16,16);
+  g.fillStyle = '#3e8c3e';
+  for (let i = 0; i < 4; i++){
+    const x = i*4;
+    g.fillRect(x,9,1,7); g.fillRect(x+1,8,1,8); g.fillRect(x+2,10,1,6); g.fillRect(x+3,9,1,7);
+  }
+});
+
+/* ---------- estado do jogo ---------- */
+const mapa = MAPA_RAW.map(l => l.split(''));
+const MAPA_H = mapa.length, MAPA_W = mapa[0].length;
+
+let npc = null, item = null;
+const jogador = {
+  x: 2, y: 2, px: 32, py: 32,
+  dir: 'down', andando: false, prog: 0, passos: 0, cdEncontro: 0
+};
+for (let y = 0; y < MAPA_H; y++)
+  for (let x = 0; x < MAPA_W; x++){
+    const c = mapa[y][x];
+    if (c === 'N'){ npc = {x, y}; mapa[y][x] = 'F'; }
+    if (c === 'B'){ item = {x, y, pego:false}; mapa[y][x] = 'T'; }
+    if (c === '@'){ jogador.x = x; jogador.y = y; mapa[y][x] = 'P'; }
+  }
+jogador.px = jogador.x * TAM; jogador.py = jogador.y * TAM;
+
+const SOLIDO = new Set(['R','W','X','S','Z']);
+function tile(x, y){
+  if (x < 0 || y < 0 || x >= MAPA_W || y >= MAPA_H) return 'R';
+  return mapa[y][x];
+}
+function bloqueado(x, y){
+  if (SOLIDO.has(tile(x, y))) return true;
+  if (npc && npc.x === x && npc.y === y) return true;
+  if (item && !item.pego && item.x === x && item.y === y) return true;
+  return false;
+}
+
+/* ---------- áudio (bipes retrô) ---------- */
+let actx = null;
+function bip(freq, dur, tipo, vol){
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), ga = actx.createGain();
+    o.type = tipo || 'square'; o.frequency.value = freq;
+    ga.gain.setValueAtTime(vol || .04, actx.currentTime);
+    ga.gain.exponentialRampToValueAtTime(.001, actx.currentTime + dur);
+    o.connect(ga); ga.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+  } catch(e){}
+}
+const somOk    = () => bip(880, .07);
+const somBump  = () => bip(90,  .08, 'triangle', .06);
+const somItem  = () => { bip(660,.09); setTimeout(()=>bip(880,.09),90); setTimeout(()=>bip(1180,.16),180); };
+
+/* ---------- caixa de diálogo ---------- */
+const elDialog = document.getElementById('dialog');
+const elTexto  = document.getElementById('dtexto');
+const elSeta   = document.getElementById('seta');
+const dlg = { aberto:false, paginas:[], pag:0, pos:0, timer:null };
+
+function abrirDialogo(paginas){
+  dlg.aberto = true; dlg.paginas = paginas; dlg.pag = 0;
+  elDialog.classList.add('aberto');
+  digitar();
+}
+function digitar(){
+  clearInterval(dlg.timer);
+  dlg.pos = 0; elTexto.textContent = ''; elSeta.style.display = 'none';
+  const texto = dlg.paginas[dlg.pag];
+  dlg.timer = setInterval(() => {
+    dlg.pos++;
+    elTexto.textContent = texto.slice(0, dlg.pos);
+    if (dlg.pos >= texto.length){
+      clearInterval(dlg.timer);
+      elSeta.style.display = 'inline';
+    }
+  }, 28);
+}
+function avancarDialogo(){
+  const texto = dlg.paginas[dlg.pag];
+  if (dlg.pos < texto.length){          // pular a digitação
+    clearInterval(dlg.timer);
+    dlg.pos = texto.length;
+    elTexto.textContent = texto;
+    elSeta.style.display = 'inline';
+    return;
+  }
+  somOk();
+  if (dlg.pag < dlg.paginas.length - 1){ dlg.pag++; digitar(); }
+  else { dlg.aberto = false; elDialog.classList.remove('aberto'); }
+}
+
+/* ---------- ações ---------- */
+function acaoA(){
+  if (telaTitulo){ fecharTitulo(); return; }
+  if (dlg.aberto){ avancarDialogo(); return; }
+  const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[jogador.dir];
+  const ax = jogador.x + d[0], ay = jogador.y + d[1];
+  const t = tile(ax, ay);
+  if (npc && npc.x === ax && npc.y === ay){ somOk(); abrirDialogo(CONFIG.mensagensNPC); }
+  else if (t === 'S'){ somOk(); abrirDialogo([CONFIG.placa1]); }
+  else if (t === 'Z'){ somOk(); abrirDialogo([CONFIG.placa2]); }
+  else if (item && !item.pego && item.x === ax && item.y === ay){
+    item.pego = true; somItem(); abrirDialogo([CONFIG.itemMsg]);
+  }
+}
+
+let telaTitulo = true;
+function fecharTitulo(){
+  telaTitulo = false;
+  document.getElementById('titulo').style.display = 'none';
+  somOk();
+}
+
+/* ---------- entrada (teclado + toque) ---------- */
+const seguradas = [];        // pilha de direções pressionadas (última vence)
+let correndo = false;
+function pressionaDir(d){ if (!seguradas.includes(d)) seguradas.push(d); }
+function soltaDir(d){ const i = seguradas.indexOf(d); if (i >= 0) seguradas.splice(i,1); }
+
+const TECLAS = {
+  ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+  w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right'
+};
+addEventListener('keydown', e => {
+  if (TECLAS[e.key]){ pressionaDir(TECLAS[e.key]); e.preventDefault(); }
+  else if (['z','Z','Enter',' '].includes(e.key)){ if (!e.repeat) acaoA(); e.preventDefault(); }
+  else if (['x','X','Shift'].includes(e.key)) correndo = true;
+});
+addEventListener('keyup', e => {
+  if (TECLAS[e.key]) soltaDir(TECLAS[e.key]);
+  if (['x','X','Shift'].includes(e.key)) correndo = false;
+});
+
+document.querySelectorAll('.dbtn[data-dir]').forEach(btn => {
+  const d = btn.dataset.dir;
+  const baixo = e => { e.preventDefault(); btn.classList.add('on'); pressionaDir(d); };
+  const cima  = e => { e.preventDefault(); btn.classList.remove('on'); soltaDir(d); };
+  btn.addEventListener('pointerdown', baixo);
+  btn.addEventListener('pointerup', cima);
+  btn.addEventListener('pointercancel', cima);
+  btn.addEventListener('pointerleave', cima);
+});
+const btnA = document.getElementById('btn-a');
+btnA.addEventListener('pointerdown', e => { e.preventDefault(); acaoA(); });
+const btnB = document.getElementById('btn-b');
+btnB.addEventListener('pointerdown', e => { e.preventDefault(); correndo = true; });
+btnB.addEventListener('pointerup',   () => correndo = false);
+btnB.addEventListener('pointercancel',() => correndo = false);
+document.getElementById('titulo').addEventListener('pointerdown', fecharTitulo);
+elDialog.addEventListener('pointerdown', e => { e.preventDefault(); avancarDialogo(); });
+
+/* ---------- atualização ---------- */
+let ultBump = 0;
+function atualizar(dt){
+  if (telaTitulo || dlg.aberto) return;
+  const dirAtiva = seguradas[seguradas.length - 1];
+  const vel = (correndo ? 2.1 : 1.15) * dt * 60;
+
+  if (!jogador.andando && dirAtiva){
+    jogador.dir = dirAtiva;
+    const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[dirAtiva];
+    const nx = jogador.x + d[0], ny = jogador.y + d[1];
+    if (!bloqueado(nx, ny)){
+      jogador.andando = true; jogador.prog = 0;
+      jogador.alvoX = nx; jogador.alvoY = ny;
+    } else if (performance.now() - ultBump > 350){
+      ultBump = performance.now(); somBump();
+    }
+  }
+
+  if (jogador.andando){
+    jogador.prog += vel;
+    if (jogador.prog >= TAM){
+      jogador.x = jogador.alvoX; jogador.y = jogador.alvoY;
+      jogador.px = jogador.x * TAM; jogador.py = jogador.y * TAM;
+      jogador.andando = false; jogador.passos++;
+      if (jogador.cdEncontro > 0) jogador.cdEncontro--;
+      if (tile(jogador.x, jogador.y) === 'T' && jogador.cdEncontro === 0 && Math.random() < .12){
+        jogador.cdEncontro = 5;
+        bip(300,.12); setTimeout(()=>bip(240,.16),110);
+        abrirDialogo([CONFIG.encontros[Math.floor(Math.random()*CONFIG.encontros.length)]]);
+      }
+    } else {
+      const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[jogador.dir];
+      jogador.px = jogador.x * TAM + d[0] * jogador.prog;
+      jogador.py = jogador.y * TAM + d[1] * jogador.prog;
+    }
+  }
+}
+
+/* ---------- desenho ---------- */
+const tela = document.getElementById('tela');
+const ctx = tela.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+function desenhar(t){
+  const camX = Math.max(0, Math.min(jogador.px - (TELA_W - TAM)/2, MAPA_W*TAM - TELA_W));
+  const camY = Math.max(0, Math.min(jogador.py - (TELA_H - TAM)/2, MAPA_H*TAM - TELA_H));
+  const cx = Math.round(camX), cy = Math.round(camY);
+  const fAgua = Math.floor(t/600) % 2, fFlor = Math.floor(t/500) % 2;
+
+  const x0 = Math.floor(cx/TAM), y0 = Math.floor(cy/TAM);
+  for (let ty = y0; ty <= y0 + Math.ceil(TELA_H/TAM); ty++)
+    for (let tx = x0; tx <= x0 + Math.ceil(TELA_W/TAM); tx++){
+      const c = tile(tx, ty);
+      let img = TILES[c] || TILES.G;
+      if (c === 'W') img = TILES.W[fAgua];
+      if (c === 'F') img = TILES.F[fFlor];
+      ctx.drawImage(img, tx*TAM - cx, ty*TAM - cy);
+    }
+
+  if (item && !item.pego) ctx.drawImage(TILES.B, item.x*TAM - cx, item.y*TAM - cy);
+  if (npc) ctx.drawImage(SPRITE_NPC, npc.x*TAM - cx, npc.y*TAM - cy - 2);
+
+  const quadro = jogador.andando && (jogador.prog % TAM) < TAM*0.6 ? 1 : 0;
+  const spr = SPRITES[jogador.dir][quadro];
+  ctx.drawImage(spr, Math.round(jogador.px) - cx, Math.round(jogador.py) - cy - 2);
+
+  if (tile(jogador.x, jogador.y) === 'T' && !jogador.andando)
+    ctx.drawImage(MATO_TOPO, jogador.x*TAM - cx, jogador.y*TAM - cy);
+}
+
+let tAnt = performance.now();
+function laco(t){
+  const dt = Math.min((t - tAnt)/1000, .05);
+  tAnt = t;
+  atualizar(dt);
+  desenhar(t);
+  requestAnimationFrame(laco);
+}
+requestAnimationFrame(laco);
+
+/* ---------- escala inteira para ficar nítido ---------- */
+function redimensionar(){
+  const shell = document.getElementById('shell');
+  const paisagem = matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
+  const folgaW = paisagem ? 260 : 60;
+  const folgaH = paisagem ? 70  : 230;
+  const escala = Math.max(1, Math.floor(Math.min(
+    (innerWidth  - folgaW) / TELA_W,
+    (innerHeight - folgaH) / TELA_H
+  )));
+  tela.style.width  = TELA_W * escala + 'px';
+  tela.style.height = TELA_H * escala + 'px';
+  const fonte = Math.max(10, Math.round(escala * 5.5));
+  elDialog.style.fontSize = fonte + 'px';
+  document.getElementById('titulo').style.fontSize = Math.max(8, Math.round(escala*4)) + 'px';
+  document.querySelector('#titulo h1').style.fontSize = Math.max(14, Math.round(escala*8)) + 'px';
+}
+addEventListener('resize', redimensionar);
+redimensionar();
+</script>
+</body>
+</html>
