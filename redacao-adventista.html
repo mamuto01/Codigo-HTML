@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redação - A Igreja Adventista do Sétimo Dia é uma seita?</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #painel-redacao {
+      background-color: #e8f1f5;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    #barra-topo {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    #aviso {
+      border: 2px solid #c0392b;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+      font-size: 15px;
+      padding: 8px 12px;
+    }
+
+    #botao-ocultar {
+      background-color: #cfcfcf;
+      border: none;
+      border-radius: 8px;
+      color: #222;
+      font-size: 16px;
+      padding: 8px 18px;
+      cursor: pointer;
+    }
+
+    #botao-ocultar:hover {
+      background-color: #bdbdbd;
+    }
+
+    #texto-redacao {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 600px;
+      background-color: #fff;
+      border: 3px solid #5b8fc9;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #111;
+      resize: vertical;
+    }
+
+    @media screen and (max-width: 600px) {
+      body { padding: 10px; }
+      #painel-redacao { padding: 12px; }
+      #texto-redacao { min-height: 450px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="painel-redacao">
+    <div id="barra-topo">
+      <span id="aviso">Redação pronta para copiar</span>
+      <button type="button" id="botao-ocultar" onclick="alternarTexto()">Ocultar</button>
+    </div>
+    <textarea id="texto-redacao" spellcheck="false">A classificação de um grupo religioso como "seita" costuma ser menos uma definição técnica do que um julgamento de valor. Nesse sentido, rotular a Igreja Adventista do Sétimo Dia como seita revela mais sobre a disputa por legitimidade entre tradições cristãs do que sobre a natureza da denominação, que estrutura sua fé na autoridade das Escrituras e é reconhecida como genuinamente cristã.
+
+O primeiro equívoco está no critério adotado. Muitos apologetas consideram herética toda doutrina não compartilhada pela maioria dos evangélicos, como a observância do sábado, a inconsciência dos mortos ou o juízo investigativo. Contudo, a verdade religiosa não se estabelece por consenso numérico. Os próprios cristãos primitivos foram tratados como seita pelos judeus (Atos 24:14), e o exemplo dos bereanos ensina que o critério legítimo é o exame das Escrituras (Atos 17:11).
+
+Outra objeção recorrente refere-se ao reconhecimento do dom profético em Ellen G. White. Todavia, a denominação afirma explicitamente que tais escritos não substituem nem superam a Bíblia, permanecendo submetidos a ela. Acrescente-se que o próprio apóstolo João orientou que os profetas fossem provados, e não indistintamente rejeitados (1 João 4:1). Ademais, o reconhecimento de teólogos como Barnhouse, Martin e Paxton, bem como o diálogo oficial com a Federação Luterana Mundial, confirma essa legitimidade cristã.
+
+Conclui-se, portanto, que a Igreja Adventista do Sétimo Dia não é uma seita, mas uma denominação cristã que sustenta suas crenças na Bíblia. Divergências doutrinárias existem e são legítimas; transformá-las em rótulo depreciativo, porém, substitui o debate honesto pelo preconceito.</textarea>
+  </div>
+
+  <script>
+    function alternarTexto() {
+      var caixa = document.getElementById('texto-redacao');
+      var botao = document.getElementById('botao-ocultar');
+
+      if (caixa.style.display === 'none') {
+        caixa.style.display = 'block';
+        botao.textContent = 'Ocultar';
+      } else {
+        caixa.style.display = 'none';
+        botao.textContent = 'Mostrar';
+      }
+    }
+  </script>
+</body>
+</html>
