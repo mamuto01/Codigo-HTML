@@ -16,7 +16,7 @@
     -webkit-user-select:none; user-select:none;
   }
 
-  /* ---------- console (shell) ---------- */
+  /* ---------- console (carcaça) ---------- */
   #shell {
     background: linear-gradient(160deg, #4a4a68, #34344a 60%, #2b2b3d);
     border-radius: 18px 18px 48px 18px;
@@ -44,7 +44,7 @@
     background:#88c070; border-radius:3px;
   }
 
-  /* ---------- dialog box ---------- */
+  /* ---------- caixa de diálogo ---------- */
   #dialog {
     position:absolute; left:2%; right:2%; bottom:3%;
     background:#f8f8f0; color:#202030;
@@ -61,7 +61,7 @@
   }
   @keyframes pisca { 50% { opacity:0; } }
 
-  /* ---------- title screen ---------- */
+  /* ---------- tela de título ---------- */
   #titulo {
     position:absolute; inset:0; border-radius:3px;
     background: linear-gradient(#f8e8a0 0 62%, #78c850 62% 100%);
@@ -84,7 +84,38 @@
     width:9px; height:9px; border-radius:50%; background:#f8f8f0; border:3px solid #202030;
   }
 
-  /* ---------- controls ---------- */
+  /* ---------- cena final ---------- */
+  #cena {
+    position:absolute; inset:0; border-radius:3px; z-index:6;
+    background: radial-gradient(circle at 50% 35%, #3a1428 0%, #14060e 75%);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:6%; text-align:center; padding:6%;
+    opacity:0; transition: opacity 1.2s ease;
+  }
+  #cena.aberta { display:flex; }
+  #cena.visivel { opacity:1; }
+  #coracao-grande {
+    width:32%; image-rendering:pixelated;
+    animation: batida 1s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(232,120,160,.5));
+  }
+  @keyframes batida { 50% { transform:scale(1.14); } }
+  @media (prefers-reduced-motion: reduce) {
+    #coracao-grande, #seta, #titulo .start { animation:none; }
+  }
+  #pergunta { color:#f8d0e0; font-weight:bold; line-height:1.4; white-space:pre-wrap; }
+  #botoes { display:flex; flex-direction:column; gap:10px; width:70%; }
+  #botoes button {
+    font-family:inherit; font-weight:bold; font-size:inherit;
+    background:#f8f8f0; color:#202030; border:3px solid #202030; border-radius:6px;
+    box-shadow: inset 0 0 0 2px #f8f8f0, inset 0 0 0 4px #e878a0, 0 3px 0 #6a2040;
+    padding:6% 4%; cursor:pointer;
+  }
+  #botoes button:active { transform:translateY(2px); box-shadow: inset 0 0 0 2px #f8f8f0, inset 0 0 0 4px #e878a0; }
+  #resposta { color:#f8d0e0; font-weight:bold; line-height:1.5; white-space:pre-wrap; display:none; }
+  #confete { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  /* ---------- controles ---------- */
   #controles { display:flex; align-items:center; justify-content:space-between; padding:0 6px; }
   #dpad {
     position:relative; width:118px; height:118px; flex:none;
@@ -116,7 +147,7 @@
     color:#7a7a98; font-size:10px; text-align:center; letter-spacing:1px;
   }
 
-  /* landscape: controls beside the screen */
+  /* paisagem: controles ao lado da tela */
   @media (orientation: landscape) and (max-height: 520px) {
     #shell { flex-direction:row; align-items:center; border-radius:24px; gap:16px; }
     #brand, #dica { display:none; }
@@ -135,10 +166,20 @@
       <div id="titulo">
         <div id="bola"></div>
         <h1>AVENTURA<br>POKÉMON</h1>
-        <div class="sub">Edição Especial</div>
+        <div class="sub" id="subtitulo">Edição Especial</div>
         <div class="start">PRESSIONE A</div>
       </div>
       <div id="dialog"><span id="dtexto"></span><span id="seta">▼</span></div>
+      <div id="cena">
+        <canvas id="coracao-grande" width="13" height="11"></canvas>
+        <div id="pergunta"></div>
+        <div id="botoes">
+          <button id="b-sim1"></button>
+          <button id="b-sim2"></button>
+        </div>
+        <div id="resposta"></div>
+        <canvas id="confete"></canvas>
+      </div>
     </div>
   </div>
   <div id="controles">
@@ -161,35 +202,83 @@
 'use strict';
 
 /* =====================================================
-   PERSONALIZE AQUI as mensagens do jogo
+   ♥ PERSONALIZE AQUI ♥
+   Tudo o que aparece de texto no jogo está nesta seção.
+   Onde estiver escrito {nome}, o jogo troca pelo nome dela.
    ===================================================== */
 const CONFIG = {
-  // O que a garota do jardim de flores diz (cada item = uma "página")
+  nomeDela: "princesa",   // ⬅ TROQUE pelo nome dela!
+
+  // A garota do jardim de flores (lado oeste do mapa)
   mensagensNPC: [
-    "Oi! Que bom te ver por aqui! ♥",
-    "Sabia que este jogo foi feito especialmente para alguém muito especial?",
-    "...e essa pessoa é VOCÊ! ♥"
+    "Oi, {nome}! ♥",
+    "Espalharam 5 corações por este mundo... Dizem que cada um guarda um segredo.",
+    "Encontre todos e vá até o jardim cercado, no leste do mapa. Alguém espera por você lá!"
   ],
-  placa1: "PONTA DO PRADO\n\nCuidado com o mato alto!",
-  placa2: "LAGO ESPELHO\n\nProibido pescar MAGIKARP.",
-  itemMsg: "Você encontrou um\n♥ CORAÇÃO ♥\n\nGuarde com carinho!",
+  npcDepois: [
+    "Você encontrou todos os corações! ♥",
+    "Agora corre... não deixe essa pessoa esperando!"
+  ],
+
+  // As frases dos 5 corações, na ordem em que estão escondidos:
+  // [0] noroeste  [1] mato alto (nordeste)  [2] perto do lago
+  // [3] sudeste, na trilha  [4] campo do sul
+  coracoes: [
+    "Seu sorriso ilumina qualquer lugar.",
+    "Com você, até o silêncio é bom.",
+    "Você é o meu tipo favorito de aventura.",
+    "O mundo fica mais bonito quando você está por perto.",
+    "De todos os tesouros deste mapa, o mais raro é você."
+  ],
+  todosEncontrados: "Você encontrou todos os corações!\n\nAgora vá até o jardim cercado, no leste do mapa... ♥",
+
+  // O rapaz que espera no jardim cercado (você!)
+  eleAntes: [
+    "Oi, {nome}! ♥",
+    "Encontre os 5 corações escondidos pelo mapa e volte aqui..."
+  ],
+  eleFinal: [
+    "Você veio! ♥",
+    "{nome}, eu fiz este mundo inteirinho só para te ver sorrir.",
+    "E agora que você está aqui... quero te perguntar uma coisa."
+  ],
+  eleDepois: [
+    "♥ ♥ ♥",
+    "Melhor dia da minha vida!"
+  ],
+
+  // A grande pergunta e as duas respostas possíveis (não tem como dizer não 😄)
+  pergunta: "{nome}...\nquer sair comigo?",
+  botao1: "SIM!",
+  botao2: "COM CERTEZA!",
+  respostaFinal: "♥ ♥ ♥\n\nVocê acabou de deixar\nalguém muito feliz!\n\nFIM\n...ou melhor: COMEÇO.",
+
+  // Placas do mapa
+  placa1: "PONTA DO PRADO\n\n5 corações estão escondidos por aí... ♥",
+  placa2: "LAGO ESPELHO\nProibido pescar MAGIKARP.\n\n(P.S.: seus olhos brilham mais que este lago. ♥)",
+
+  // Surpresas do mato alto
   encontros: [
     "Um POKÉMON selvagem apareceu...\n\n...mas ficou com vergonha e fugiu!",
     "Farfalhar no mato...\n\nEra só o vento. Ufa!",
-    "Você quase pisou num RATTATA.\nEle nem ligou."
+    "Um PIDGEY passou voando e deixou cair uma pétala de flor. ♥"
   ]
 };
 
+function aplicarNome(txt){
+  return txt.replaceAll('{nome}', CONFIG.nomeDela.trim() || 'você');
+}
+
 /* ---------- mapa ----------
    R árvore  G grama  T mato alto  W água  P caminho
-   F flor    S placa1  Z placa2   X cerca
-   N garota  B item    @ início do jogador                */
+   F flor    S placa1  Z placa2   X cerca  H coração
+   N garota  M rapaz   @ início da jogadora              */
 const MAPA_RAW = [
 "RRRRRRRRRRRRRRRRRRRRRRRRRRRR",
-"RRGGGGGGGGGGGPPGGGGGTTTTTTRR",
+"RRGHGGGGGGGGGPPGGGGGTTTTTTRR",
 "RGGGGGGGGGGGGPPGGGGGTTTTTTRR",
 "RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
-"RGFFNFFGGGGGGPPGGGGGTTBTTTRR",
+"RGFFNFFGGGGGGPPGGGGGTTHTTTRR",
 "RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
 "RGFFFFFGGGGGGPPGGGGGTTTTTTRR",
 "RGGGGGGGGGGGGPPGGGGGGTTTTGRR",
@@ -199,13 +288,13 @@ const MAPA_RAW = [
 "RGGGGGGGGGGGGPPGGGGGGGPPGGRR",
 "RGGGGGGGGGGGGPPGGGGGGGPPGGRR",
 "RGGWWWWWWGGGGPPGGGXXXXGPPGRR",
-"RGZWWWWWWGGGGPPGGGXGGGGPPGRR",
-"RGGWWWWWWGGGGPPGGGGGGGGPPGRR",
-"RGGWWWWWWGGGGPPGGGXGGGGPPGRR",
+"RGZWWWWWWGGGGPPGGGXFFFGPPGRR",
+"RGGWWWWWWGGGGPPGGGGFMFGPPGRR",
+"RGGWWWWWWGHGGPPGGGXFFFGPPGRR",
 "RGGGWWWWGGGGGPPGGGXXXXGPPGRR",
-"RGGGGGGGGGGGGPPGGGGGGGGPPGRR",
+"RGGGGGGGGGGGGPPGGGGGGGGPPHRR",
 "RGGGGGGGGGGGGPPPPPPPPPPPPGRR",
-"RGGGGGGGGGGGGGGGGGGGGGGGGGRR",
+"RGGGGGGGHGGGGGGGGGGGGGGGGGRR",
 "RRRRRRRRRRRRRRRRRRRRRRRRRRRR"
 ];
 
@@ -216,7 +305,8 @@ const TELA_W = 160, TELA_H = 144;    // resolução clássica de Game Boy
 const PAL = {
   k:'#181820', r:'#e04838', s:'#f8c088', h:'#402818',
   b:'#3868b0', o:'#584030', w:'#f8f8f0',
-  H:'#a04020', p:'#e878a0', d:'#c03028'
+  H:'#a04020', p:'#e878a0', d:'#c03028',
+  y:'#f8d838', O:'#f09030'
 };
 
 const SPR_DOWN_STAND = [
@@ -345,33 +435,98 @@ const SPR_NPC = [
 "....koo..ook....",
 "................"
 ];
+const SPR_BICHINHO = [
+"................",
+"................",
+".......k........",
+"......kyk.......",
+"................",
+"....kyyyyyyk....",
+"...kyyyyyyyyk...",
+"...kykyyyykyk...",
+"...kpyyOOyypk...",
+"...kyyyyyyyyk...",
+"....kyyyyyyk....",
+".....kkkkkk.....",
+".....kk..kk.....",
+"................",
+"................",
+"................"
+];
 
 function espelhar(grid){ return grid.map(l => l.split('').reverse().join('')); }
 
-function fazerSprite(grid, troca){
-  const c = document.createElement('canvas');
-  c.width = TAM; c.height = TAM;
-  const g = c.getContext('2d');
+function pintarGrade(g, grid, ox, oy, troca){
   for (let y = 0; y < grid.length; y++){
     const linha = grid[y];
     for (let x = 0; x < linha.length; x++){
       let ch = linha[x];
       if (ch === '.') continue;
       if (troca && troca[ch]) ch = troca[ch];
-      g.fillStyle = PAL[ch] || '#ff00ff';
-      g.fillRect(x, y, 1, 1);
+      g.fillStyle = PAL[ch] || ch;   // aceita cor direta ('#123456') na troca
+      g.fillRect(ox + x, oy + y, 1, 1);
     }
   }
+}
+function fazerSprite(grid, troca){
+  const c = document.createElement('canvas');
+  c.width = TAM; c.height = TAM;
+  pintarGrade(c.getContext('2d'), grid, 0, 0, troca);
   return c;
 }
 
+/* jogadora: uniforme rosa (é ela!) — o rapaz do jardim usa o boné vermelho */
+const ROSA = { r:'p' };
 const SPRITES = {
-  down:  [fazerSprite(SPR_DOWN_STAND), fazerSprite(SPR_DOWN_WALK)],
-  up:    [fazerSprite(SPR_UP_STAND),   fazerSprite(SPR_UP_WALK)],
-  left:  [fazerSprite(SPR_LEFT_STAND), fazerSprite(SPR_LEFT_WALK)],
-  right: [fazerSprite(espelhar(SPR_LEFT_STAND)), fazerSprite(espelhar(SPR_LEFT_WALK))]
+  down:  [fazerSprite(SPR_DOWN_STAND, ROSA), fazerSprite(SPR_DOWN_WALK, ROSA)],
+  up:    [fazerSprite(SPR_UP_STAND, ROSA),   fazerSprite(SPR_UP_WALK, ROSA)],
+  left:  [fazerSprite(SPR_LEFT_STAND, ROSA), fazerSprite(SPR_LEFT_WALK, ROSA)],
+  right: [fazerSprite(espelhar(SPR_LEFT_STAND), ROSA), fazerSprite(espelhar(SPR_LEFT_WALK), ROSA)]
 };
-const SPRITE_NPC = fazerSprite(SPR_NPC, { h:'H' });
+const SPRITE_NPC  = fazerSprite(SPR_NPC, { h:'H', p:'b' });   // garota: cabelo ruivo, vestido azul
+const SPRITE_ELE  = fazerSprite(SPR_DOWN_STAND);              // o rapaz de boné vermelho
+const SPRITE_BICH = fazerSprite(SPR_BICHINHO);                // o bichinho companheiro
+
+/* corações (usados no tile, no HUD e na cena final) */
+const CORACAO_9 = [
+".kk...kk.",
+"kppk.kppk",
+"kpwpppppk",
+"kpppppppk",
+".kpppppk.",
+"..kpppk..",
+"...kpk...",
+"....k...."
+];
+const CORACAO_MINI = [
+".kk.kk.",
+"kpppppk",
+"kpppppk",
+".kpppk.",
+"..kpk..",
+"...k..."
+];
+const CORACAO_GRANDE = [
+"..kkk...kkk..",
+".kpwpk.kpppk.",
+"kpwpppkpppppk",
+"kpppppppppppk",
+"kpppppppppppk",
+".kpppppppppk.",
+"..kpppppppk..",
+"...kpppppk...",
+"....kpppk....",
+".....kpk.....",
+"......k......"
+];
+function miniCoracao(cheio){
+  const c = document.createElement('canvas');
+  c.width = 7; c.height = 6;
+  pintarGrade(c.getContext('2d'), CORACAO_MINI, 0, 0, cheio ? null : { p:'#4a5568' });
+  return c;
+}
+const MINI_CHEIO = miniCoracao(true), MINI_VAZIO = miniCoracao(false);
+pintarGrade(document.getElementById('coracao-grande').getContext('2d'), CORACAO_GRANDE, 0, 0);
 
 /* ---------- tiles desenhados em código ---------- */
 function novoTile(desenho){
@@ -459,19 +614,15 @@ const TILES = {
     g.fillStyle = '#181820'; g.fillRect(0,4,16,4); g.fillRect(2,2,3,12); g.fillRect(11,2,3,12);
     g.fillStyle = '#a06a32'; g.fillRect(0,5,16,2); g.fillRect(3,3,1,10); g.fillRect(12,3,1,10);
     g.fillStyle = '#c08848'; g.fillRect(3,3,1,2); g.fillRect(12,3,1,2);
-  }),
-  B: novoTile(g => {
-    baseGrama(g);
-    g.fillStyle = '#181820'; g.fillRect(4,3,8,10); g.fillRect(3,4,10,8);
-    g.fillStyle = '#e04838'; g.fillRect(4,4,8,3); g.fillRect(5,3,6,1);
-    g.fillStyle = '#f8f8f0'; g.fillRect(4,9,8,3); g.fillRect(5,12,6,1);
-    g.fillStyle = '#181820'; g.fillRect(3,7,10,2);
-    g.fillStyle = '#f8f8f0'; g.fillRect(7,7,2,2);
   })
 };
 TILES.Z = TILES.S;
+TILES.H = [
+  novoTile(g => { baseGrama(g); pintarGrade(g, CORACAO_9, 3, 3); }),
+  novoTile(g => { baseGrama(g); pintarGrade(g, CORACAO_9, 3, 4); })
+];
 
-/* sobreposição do mato alto (metade de baixo) para o jogador "afundar" nele */
+/* sobreposição do mato alto (metade de baixo) para a jogadora "afundar" nele */
 const MATO_TOPO = novoTile(g => {
   g.clearRect(0,0,16,16);
   g.fillStyle = '#3e8c3e';
@@ -485,7 +636,8 @@ const MATO_TOPO = novoTile(g => {
 const mapa = MAPA_RAW.map(l => l.split(''));
 const MAPA_H = mapa.length, MAPA_W = mapa[0].length;
 
-let npc = null, item = null;
+let npc = null, ele = null;
+const coracoes = [];
 const jogador = {
   x: 2, y: 2, px: 32, py: 32,
   dir: 'down', andando: false, prog: 0, passos: 0, cdEncontro: 0
@@ -494,10 +646,19 @@ for (let y = 0; y < MAPA_H; y++)
   for (let x = 0; x < MAPA_W; x++){
     const c = mapa[y][x];
     if (c === 'N'){ npc = {x, y}; mapa[y][x] = 'F'; }
-    if (c === 'B'){ item = {x, y, pego:false}; mapa[y][x] = 'T'; }
+    if (c === 'M'){ ele = {x, y}; mapa[y][x] = 'F'; }
+    if (c === 'H'){ coracoes.push({x, y, pego:false}); mapa[y][x] = 'G'; }
     if (c === '@'){ jogador.x = x; jogador.y = y; mapa[y][x] = 'P'; }
   }
 jogador.px = jogador.x * TAM; jogador.py = jogador.y * TAM;
+const TOTAL_CORACOES = coracoes.length;
+const achados = () => coracoes.filter(c => c.pego).length;
+
+const bichinho = {
+  x: jogador.x - 1, y: jogador.y,
+  px: (jogador.x - 1) * TAM, py: jogador.y * TAM,
+  andando: false, prog: 0, alvoX: 0, alvoY: 0
+};
 
 const SOLIDO = new Set(['R','W','X','S','Z']);
 function tile(x, y){
@@ -507,7 +668,7 @@ function tile(x, y){
 function bloqueado(x, y){
   if (SOLIDO.has(tile(x, y))) return true;
   if (npc && npc.x === x && npc.y === y) return true;
-  if (item && !item.pego && item.x === x && item.y === y) return true;
+  if (ele && ele.x === x && ele.y === y) return true;
   return false;
 }
 
@@ -527,15 +688,27 @@ function bip(freq, dur, tipo, vol){
 const somOk    = () => bip(880, .07);
 const somBump  = () => bip(90,  .08, 'triangle', .06);
 const somItem  = () => { bip(660,.09); setTimeout(()=>bip(880,.09),90); setTimeout(()=>bip(1180,.16),180); };
+function tocarMelodia(){
+  const notas = [[659.25,.3],[783.99,.3],[1046.5,.45],[880,.3],[987.77,.3],[1318.5,.6],[1046.5,.9]];
+  let t = 0;
+  notas.forEach(([f,d]) => {
+    setTimeout(() => { bip(f, d, 'triangle', .055); bip(f/2, d, 'sine', .03); }, t*1000);
+    t += d * .92;
+  });
+}
+function fanfarra(){
+  [523.25,659.25,783.99,1046.5].forEach((f,i)=> setTimeout(()=>bip(f,.22,'triangle',.06), i*110));
+}
 
 /* ---------- caixa de diálogo ---------- */
 const elDialog = document.getElementById('dialog');
 const elTexto  = document.getElementById('dtexto');
 const elSeta   = document.getElementById('seta');
-const dlg = { aberto:false, paginas:[], pag:0, pos:0, timer:null };
+const dlg = { aberto:false, paginas:[], pag:0, pos:0, timer:null, aoFechar:null };
 
-function abrirDialogo(paginas){
-  dlg.aberto = true; dlg.paginas = paginas; dlg.pag = 0;
+function abrirDialogo(paginas, aoFechar){
+  dlg.aberto = true; dlg.paginas = paginas.map(aplicarNome); dlg.pag = 0;
+  dlg.aoFechar = aoFechar || null;
   elDialog.classList.add('aberto');
   digitar();
 }
@@ -563,22 +736,85 @@ function avancarDialogo(){
   }
   somOk();
   if (dlg.pag < dlg.paginas.length - 1){ dlg.pag++; digitar(); }
-  else { dlg.aberto = false; elDialog.classList.remove('aberto'); }
+  else {
+    dlg.aberto = false; elDialog.classList.remove('aberto');
+    const cb = dlg.aoFechar; dlg.aoFechar = null;
+    if (cb) cb();
+  }
+}
+
+/* ---------- cena final ---------- */
+let cenaAberta = false, respondido = false;
+const elCena = document.getElementById('cena');
+function iniciarCena(){
+  cenaAberta = true;
+  document.getElementById('pergunta').textContent = aplicarNome(CONFIG.pergunta);
+  document.getElementById('b-sim1').textContent = CONFIG.botao1;
+  document.getElementById('b-sim2').textContent = CONFIG.botao2;
+  elCena.classList.add('aberta');
+  requestAnimationFrame(() => elCena.classList.add('visivel'));
+  tocarMelodia();
+}
+function responder(){
+  if (respondido) return;
+  respondido = true;
+  fanfarra();
+  document.getElementById('pergunta').style.display = 'none';
+  document.getElementById('botoes').style.display = 'none';
+  const r = document.getElementById('resposta');
+  r.textContent = aplicarNome(CONFIG.respostaFinal);
+  r.style.display = 'block';
+  iniciarConfete();
+  setTimeout(tocarMelodia, 900);
+}
+document.getElementById('b-sim1').addEventListener('click', responder);
+document.getElementById('b-sim2').addEventListener('click', responder);
+
+function iniciarConfete(){
+  const cv = document.getElementById('confete');
+  cv.width = cv.clientWidth; cv.height = cv.clientHeight;
+  const g = cv.getContext('2d');
+  const cores = ['#e878a0','#e04838','#f8d030','#78c8f8','#f8f8f0'];
+  const pts = Array.from({length: 60}, () => ({
+    x: Math.random()*cv.width, y: -Math.random()*cv.height,
+    vy: 40 + Math.random()*80, vx: -20 + Math.random()*40,
+    tam: 3 + Math.random()*4, cor: cores[Math.floor(Math.random()*cores.length)]
+  }));
+  let ant = performance.now();
+  (function anima(t){
+    if (!cenaAberta) return;
+    const dt = Math.min((t - ant)/1000, .05); ant = t;
+    g.clearRect(0,0,cv.width,cv.height);
+    pts.forEach(p => {
+      p.y += p.vy*dt; p.x += p.vx*dt;
+      if (p.y > cv.height){ p.y = -10; p.x = Math.random()*cv.width; }
+      g.fillStyle = p.cor;
+      g.fillRect(Math.round(p.x), Math.round(p.y), p.tam, p.tam);
+    });
+    requestAnimationFrame(anima);
+  })(ant);
 }
 
 /* ---------- ações ---------- */
 function acaoA(){
   if (telaTitulo){ fecharTitulo(); return; }
+  if (cenaAberta){ if (!respondido) responder(); return; }
   if (dlg.aberto){ avancarDialogo(); return; }
   const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[jogador.dir];
   const ax = jogador.x + d[0], ay = jogador.y + d[1];
   const t = tile(ax, ay);
-  if (npc && npc.x === ax && npc.y === ay){ somOk(); abrirDialogo(CONFIG.mensagensNPC); }
+  if (npc && npc.x === ax && npc.y === ay){
+    somOk();
+    abrirDialogo(achados() >= TOTAL_CORACOES ? CONFIG.npcDepois : CONFIG.mensagensNPC);
+  }
+  else if (ele && ele.x === ax && ele.y === ay){
+    somOk();
+    if (respondido) abrirDialogo(CONFIG.eleDepois);
+    else if (achados() >= TOTAL_CORACOES) abrirDialogo(CONFIG.eleFinal, iniciarCena);
+    else abrirDialogo([...CONFIG.eleAntes, "Você já encontrou ♥ " + achados() + "/" + TOTAL_CORACOES + ".\nEstou te esperando aqui!"]);
+  }
   else if (t === 'S'){ somOk(); abrirDialogo([CONFIG.placa1]); }
   else if (t === 'Z'){ somOk(); abrirDialogo([CONFIG.placa2]); }
-  else if (item && !item.pego && item.x === ax && item.y === ay){
-    item.pego = true; somItem(); abrirDialogo([CONFIG.itemMsg]);
-  }
 }
 
 let telaTitulo = true;
@@ -586,6 +822,11 @@ function fecharTitulo(){
   telaTitulo = false;
   document.getElementById('titulo').style.display = 'none';
   somOk();
+}
+if (CONFIG.nomeDela.trim()){
+  const n = CONFIG.nomeDela.trim();
+  document.getElementById('subtitulo').textContent =
+    'para ' + n.charAt(0).toUpperCase() + n.slice(1) + ' ♥';
 }
 
 /* ---------- entrada (teclado + toque) ---------- */
@@ -628,16 +869,25 @@ elDialog.addEventListener('pointerdown', e => { e.preventDefault(); avancarDialo
 
 /* ---------- atualização ---------- */
 let ultBump = 0;
+const DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+
 function atualizar(dt){
-  if (telaTitulo || dlg.aberto) return;
+  if (telaTitulo || dlg.aberto || cenaAberta) return;
   const dirAtiva = seguradas[seguradas.length - 1];
   const vel = (correndo ? 2.1 : 1.15) * dt * 60;
 
   if (!jogador.andando && dirAtiva){
     jogador.dir = dirAtiva;
-    const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[dirAtiva];
+    const d = DIRS[dirAtiva];
     const nx = jogador.x + d[0], ny = jogador.y + d[1];
     if (!bloqueado(nx, ny)){
+      // o bichinho vai para onde a jogadora estava
+      if (bichinho.andando){
+        bichinho.x = bichinho.alvoX; bichinho.y = bichinho.alvoY;
+      }
+      bichinho.alvoX = jogador.x; bichinho.alvoY = jogador.y;
+      bichinho.andando = true; bichinho.prog = 0;
+
       jogador.andando = true; jogador.prog = 0;
       jogador.alvoX = nx; jogador.alvoY = ny;
     } else if (performance.now() - ultBump > 350){
@@ -651,17 +901,46 @@ function atualizar(dt){
       jogador.x = jogador.alvoX; jogador.y = jogador.alvoY;
       jogador.px = jogador.x * TAM; jogador.py = jogador.y * TAM;
       jogador.andando = false; jogador.passos++;
-      if (jogador.cdEncontro > 0) jogador.cdEncontro--;
-      if (tile(jogador.x, jogador.y) === 'T' && jogador.cdEncontro === 0 && Math.random() < .12){
-        jogador.cdEncontro = 5;
-        bip(300,.12); setTimeout(()=>bip(240,.16),110);
-        abrirDialogo([CONFIG.encontros[Math.floor(Math.random()*CONFIG.encontros.length)]]);
-      }
+      aoCompletarPasso();
     } else {
-      const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[jogador.dir];
+      const d = DIRS[jogador.dir];
       jogador.px = jogador.x * TAM + d[0] * jogador.prog;
       jogador.py = jogador.y * TAM + d[1] * jogador.prog;
     }
+  }
+
+  if (bichinho.andando){
+    bichinho.prog += vel;
+    if (bichinho.prog >= TAM){
+      bichinho.x = bichinho.alvoX; bichinho.y = bichinho.alvoY;
+      bichinho.px = bichinho.x * TAM; bichinho.py = bichinho.y * TAM;
+      bichinho.andando = false;
+    } else {
+      const fx = bichinho.alvoX*TAM - bichinho.x*TAM;
+      const fy = bichinho.alvoY*TAM - bichinho.y*TAM;
+      bichinho.px = bichinho.x*TAM + Math.sign(fx) * Math.min(Math.abs(fx), bichinho.prog);
+      bichinho.py = bichinho.y*TAM + Math.sign(fy) * Math.min(Math.abs(fy), bichinho.prog);
+    }
+  }
+}
+
+function aoCompletarPasso(){
+  // coração no chão?
+  const h = coracoes.find(c => !c.pego && c.x === jogador.x && c.y === jogador.y);
+  if (h){
+    h.pego = true; somItem();
+    const n = achados();
+    const paginas = ["♥ Coração encontrado! (" + n + "/" + TOTAL_CORACOES + ")\n\n" + CONFIG.coracoes[coracoes.indexOf(h)]];
+    if (n >= TOTAL_CORACOES) paginas.push(CONFIG.todosEncontrados);
+    abrirDialogo(paginas);
+    return;
+  }
+  // surpresa no mato alto
+  if (jogador.cdEncontro > 0) jogador.cdEncontro--;
+  if (tile(jogador.x, jogador.y) === 'T' && jogador.cdEncontro === 0 && Math.random() < .12){
+    jogador.cdEncontro = 5;
+    bip(300,.12); setTimeout(()=>bip(240,.16),110);
+    abrirDialogo([CONFIG.encontros[Math.floor(Math.random()*CONFIG.encontros.length)]]);
   }
 }
 
@@ -686,8 +965,14 @@ function desenhar(t){
       ctx.drawImage(img, tx*TAM - cx, ty*TAM - cy);
     }
 
-  if (item && !item.pego) ctx.drawImage(TILES.B, item.x*TAM - cx, item.y*TAM - cy);
+  coracoes.forEach(c => {
+    if (!c.pego) ctx.drawImage(TILES.H[fFlor], c.x*TAM - cx, c.y*TAM - cy);
+  });
   if (npc) ctx.drawImage(SPRITE_NPC, npc.x*TAM - cx, npc.y*TAM - cy - 2);
+  if (ele) ctx.drawImage(SPRITE_ELE, ele.x*TAM - cx, ele.y*TAM - cy - 2);
+
+  const bob = bichinho.andando && (bichinho.prog % 8) < 4 ? 1 : 0;
+  ctx.drawImage(SPRITE_BICH, Math.round(bichinho.px) - cx, Math.round(bichinho.py) - cy - 2 - bob);
 
   const quadro = jogador.andando && (jogador.prog % TAM) < TAM*0.6 ? 1 : 0;
   const spr = SPRITES[jogador.dir][quadro];
@@ -695,6 +980,14 @@ function desenhar(t){
 
   if (tile(jogador.x, jogador.y) === 'T' && !jogador.andando)
     ctx.drawImage(MATO_TOPO, jogador.x*TAM - cx, jogador.y*TAM - cy);
+
+  // HUD: contador de corações
+  if (!telaTitulo){
+    ctx.fillStyle = 'rgba(16,16,32,.45)';
+    ctx.fillRect(1, 1, 4 + TOTAL_CORACOES*9, 10);
+    for (let i = 0; i < TOTAL_CORACOES; i++)
+      ctx.drawImage(i < achados() ? MINI_CHEIO : MINI_VAZIO, 3 + i*9, 3);
+  }
 }
 
 let tAnt = performance.now();
@@ -709,7 +1002,6 @@ requestAnimationFrame(laco);
 
 /* ---------- escala inteira para ficar nítido ---------- */
 function redimensionar(){
-  const shell = document.getElementById('shell');
   const paisagem = matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
   const folgaW = paisagem ? 260 : 60;
   const folgaH = paisagem ? 70  : 230;
@@ -721,6 +1013,7 @@ function redimensionar(){
   tela.style.height = TELA_H * escala + 'px';
   const fonte = Math.max(10, Math.round(escala * 5.5));
   elDialog.style.fontSize = fonte + 'px';
+  elCena.style.fontSize = fonte + 'px';
   document.getElementById('titulo').style.fontSize = Math.max(8, Math.round(escala*4)) + 'px';
   document.querySelector('#titulo h1').style.fontSize = Math.max(14, Math.round(escala*8)) + 'px';
 }
