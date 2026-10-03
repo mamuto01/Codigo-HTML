@@ -9,7 +9,7 @@ objeto `TEXTOS`, no começo do `<script>` do `index.html`.
 - Título: Para a minha **princesa**
 - Texto: Encha o potinho de amor e vá descobrindo os bilhetinhos que eu escrevi pra você, minha diva.
 - Botão: Começar ♡
-- Dica: Fica mais fofo com o som ligado.
+- Dica: Fica mais MELHOR com o som ligado.
 
 ## Como jogar
 - Título: Como jogar
@@ -26,16 +26,16 @@ objeto `TEXTOS`, no começo do `<script>` do `index.html`.
 - Etiqueta do bilhete: bilhetinho {n} de {total}
 
 ## Bilhetinhos (um a cada 10% do potinho)
-1. Obrigado pela paciência.
-2. Eu agradeço a Deus todos os dias por ter você em minha vida.
+1. Primeiramente, obrigado pela paciência.
+2. Eu agradeço a Deus todos os dias por ter você em minha vida, princesa.
 3. Você me incentiva a ser uma pessoa melhor.
 4. Você me ajuda nos momentos difíceis.
-5. Eu aprendo muito com você.
-6. Você é o amor da minha vida.
-7. Você é a melhor pessoa deste mundo.
-8. Eu escrevi esses textos manualmente, ksks.
+5. Todos os dias eu aprendo muito com você.
+6. Você é o amor da minha vida, e quero muito namorar com você.
+7. Você é a pessoa mais incrível deste mundo.
+8. OBS: eu escrevi todos esses textos manualmente, ksks.
 9. Sei que você não gosta de IA.
-10. Eu amo muito você. *(aparece grande quando o potinho enche)*
+10. Eu amo muito você, MINHA DIVAAAAA. *(aparece grande quando o potinho enche)*
 
 ## Potinho cheio
 - Chamada: potinho cheio!
@@ -43,15 +43,15 @@ objeto `TEXTOS`, no começo do `<script>` do `index.html`.
 - Botão: Abrir a cartinha
 
 ## Cartinha (aparece sendo datilografada)
-**Bruna, minha diva,**
+**Bruna, minha diva linda e maravilhosa, que eu amo tanto,**
 
 Às vezes, tenho muita dificuldade em demonstrar o quanto você é incrível na minha vida e o quanto eu amo você.
 
 Sei que estou passando por um momento difícil, mas tenho fé em Deus de que tudo isso vai passar. E quero dar o melhor de mim por você, minha gatinha.
 
-Quero que saiba que sempre vai poder contar comigo. Sua presença me faz muito bem.
+Quero que saiba que sempre vai poder contar comigo, e eu sempre estarei por aqui. Sua presença me faz muito bem.
 
-Nunca se esqueça de que você é muito especial para mim.
+Nunca se esqueça de que você é muito especial para mim, e eu quero muito construir um futuro ao seu lado, minha gatinha.
 
 *Com todo o meu amor,*
 *G. Fernandes ♡*
@@ -60,7 +60,7 @@ Nunca se esqueça de que você é muito especial para mim.
 - Botão: Tem mais uma coisinha…
 
 ## Foto e final
-- Legenda da polaroid: Bruna & G. ♡
+- Legenda da polaroid: Bruna & Gui ♡
 - Texto: Eu sei que você não gosta muito dessa foto… mas eu amo ela.
 - Botão: Me dá um abraço?
 - Depois do abraço: Abraço apertado enviado. Pode cobrar pessoalmente ♡

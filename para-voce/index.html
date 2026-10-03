@@ -278,7 +278,7 @@
     animation: pula .6s cubic-bezier(.3, 1.6, .5, 1) both;
   }
   @keyframes pula { from { opacity: 0; transform: scale(.7) translateY(20px); } }
-  .vit-frase { font: 700 2.6rem/1.05 var(--f-mao); color: var(--morango-esc); margin: 0; }
+  .vit-frase { overflow-wrap: anywhere; font: 700 2.4rem/1.05 var(--f-mao); color: var(--morango-esc); margin: 0; }
   .vit-info { margin: 0; color: var(--ameixa-suave); font-size: .95rem; font-variant-numeric: tabular-nums; }
 
   /* ---------- Carta ---------- */
@@ -482,7 +482,7 @@
     aberturaDestaque: "princesa",
     aberturaTexto: "Encha o potinho de amor e vá descobrindo os bilhetinhos que eu escrevi pra você, minha diva.",
     aberturaBotao: "Começar ♡",
-    aberturaDicaSom: "Fica mais fofo com o som ligado.",
+    aberturaDicaSom: "Fica mais MELHOR com o som ligado.",
 
     // Como jogar
     tutorialTitulo: "Como jogar",
@@ -502,16 +502,16 @@
 
     // Bilhetinhos (aparecem a cada 10% do potinho; o último aparece quando ele enche)
     frases: [
-      "Obrigado pela paciência.",
-      "Eu agradeço a Deus todos os dias por ter você em minha vida.",
+      "Primeiramente, obrigado pela paciência.",
+      "Eu agradeço a Deus todos os dias por ter você em minha vida, princesa.",
       "Você me incentiva a ser uma pessoa melhor.",
       "Você me ajuda nos momentos difíceis.",
-      "Eu aprendo muito com você.",
-      "Você é o amor da minha vida.",
-      "Você é a melhor pessoa deste mundo.",
-      "Eu escrevi esses textos manualmente, ksks.",
+      "Todos os dias eu aprendo muito com você.",
+      "Você é o amor da minha vida, e quero muito namorar com você.",
+      "Você é a pessoa mais incrível deste mundo.",
+      "OBS: eu escrevi todos esses textos manualmente, ksks.",
       "Sei que você não gosta de IA.",
-      "Eu amo muito você."
+      "Eu amo muito você, MINHA DIVAAAAA."
     ],
 
     // Potinho cheio
@@ -520,12 +520,12 @@
     vitoriaBotao: "Abrir a cartinha",
 
     // Cartinha (cada item da lista "carta" vira um parágrafo)
-    cartaSaudacao: "Bruna, minha diva,",
+    cartaSaudacao: "Bruna, minha diva linda e maravilhosa, que eu amo tanto,",
     carta: [
       "Às vezes, tenho muita dificuldade em demonstrar o quanto você é incrível na minha vida e o quanto eu amo você.",
       "Sei que estou passando por um momento difícil, mas tenho fé em Deus de que tudo isso vai passar. E quero dar o melhor de mim por você, minha gatinha.",
-      "Quero que saiba que sempre vai poder contar comigo. Sua presença me faz muito bem.",
-      "Nunca se esqueça de que você é muito especial para mim."
+      "Quero que saiba que sempre vai poder contar comigo, e eu sempre estarei por aqui. Sua presença me faz muito bem.",
+      "Nunca se esqueça de que você é muito especial para mim, e eu quero muito construir um futuro ao seu lado, minha gatinha."
     ],
     cartaDespedida: "Com todo o meu amor,",
     cartaAssinatura: "G. Fernandes ♡",
@@ -533,7 +533,7 @@
     cartaBotao: "Tem mais uma coisinha…",
 
     // Foto e final
-    fotoLegenda: "Bruna & G. ♡",
+    fotoLegenda: "Bruna & Gui ♡",
     fotoTexto: "Eu sei que você não gosta muito dessa foto… mas eu amo ela.",
     abracoBotao: "Me dá um abraço?",
     abracoMensagem: "Abraço apertado enviado. Pode cobrar pessoalmente ♡",
@@ -637,32 +637,21 @@
       const t = a.currentTime;
       const s = a.createBufferSource();
       s.buffer = criarRuido(a);
-      s.playbackRate.value = 0.8 + Math.random() * 0.4;
+      s.playbackRate.value = 0.9 + Math.random() * 0.2;
       const f = a.createBiquadFilter();
       f.type = "bandpass";
-      f.frequency.value = espaco ? 650 : 1500 + Math.random() * 1800;
-      f.Q.value = 1;
+      f.frequency.value = espaco ? 2200 : 3200 + Math.random() * 900;
+      f.Q.value = 3;
       const g = a.createGain();
-      g.gain.setValueAtTime(espaco ? 0.22 : 0.4, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+      g.gain.setValueAtTime(espaco ? 0.05 : 0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
       s.connect(f); f.connect(g); g.connect(a.destination);
-      s.start(t, Math.random() * 0.2, 0.05);
-      const o = a.createOscillator();
-      const og = a.createGain();
-      o.type = "triangle";
-      o.frequency.setValueAtTime(espaco ? 110 : 170, t);
-      o.frequency.exponentialRampToValueAtTime(55, t + 0.03);
-      og.gain.setValueAtTime(0.09, t);
-      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-      o.connect(og); og.connect(a.destination);
-      o.start(t);
-      o.stop(t + 0.05);
+      s.start(t, Math.random() * 0.2, 0.025);
     } catch (e) {}
   }
   function sininho() {
-    nota(2093, 1.3, 0.045);
-    nota(3136, 0.9, 0.02);
-    nota(4186, 0.5, 0.012);
+    nota(1568, 0.9, 0.022);
+    nota(2349, 0.6, 0.008);
   }
   function carrinho() {
     const a = audio();
@@ -673,16 +662,15 @@
       s.buffer = criarRuido(a);
       const f = a.createBiquadFilter();
       f.type = "bandpass";
-      f.Q.value = 2;
-      f.frequency.setValueAtTime(500, t);
-      f.frequency.exponentialRampToValueAtTime(2200, t + 0.25);
+      f.Q.value = 4;
+      f.frequency.setValueAtTime(1800, t);
+      f.frequency.exponentialRampToValueAtTime(3600, t + 0.18);
       const g = a.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.12, t + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      g.gain.linearRampToValueAtTime(0.025, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
       s.connect(f); f.connect(g); g.connect(a.destination);
-      s.start(t, 0, 0.3);
-      tecla(false);
+      s.start(t, 0, 0.22);
     } catch (e) {}
   }
   const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -724,16 +712,16 @@
         const ch = b.txt[i];
         p.textContent += ch;
         if (i % 4 === 0) seguir(p);
-        if (ch === "\n") { carrinho(); await esperar(320); continue; }
+        if (ch === "\n") { carrinho(); await esperar(240); continue; }
         tecla(ch === " ");
-        await esperar(/[.,!?;:…]/.test(ch) ? 260 : ch === " " ? 70 : 38 + Math.random() * 34);
+        await esperar(/[.,!?;:…]/.test(ch) ? 170 : ch === " " ? 40 : 22 + Math.random() * 18);
       }
       p.classList.remove("digitando");
       if (!pular) {
         sininho();
-        await esperar(380);
+        await esperar(300);
         carrinho();
-        await esperar(320);
+        await esperar(220);
       }
     }
     if (vez !== cartaVez) return;
@@ -835,7 +823,7 @@
     else if (sorte < chanceNuvem + 0.14 && G.ima <= 0 && G.pontos > 15 && !G.itens.some((i) => i.tipo === "ima")) tipo = "ima";
 
     const r = tipo === "nuvem" ? 28 : tipo === "ouro" ? 19 : tipo === "ima" ? 22 : 16 + Math.random() * 5;
-    const base = (170 + 240 * p) * escala;
+    const base = (135 + 175 * p) * escala;
     const fator = tipo === "nuvem" ? 0.72 : tipo === "ima" ? 0.8 : tipo === "ouro" ? 1.15 : 1;
     G.itens.push({
       tipo, r,
@@ -860,7 +848,7 @@
 
     if (G.comecou && !G.fim) {
       G.acc += dt;
-      const intervalo = 0.78 - 0.36 * progresso();
+      const intervalo = 0.95 - 0.33 * progresso();
       while (G.acc > intervalo) { G.acc -= intervalo; nascer(); }
     }
 
@@ -978,7 +966,7 @@
     void el.offsetWidth;
     el.classList.add("entra");
     arpejo([1046.5, 1318.51], 0.08, 0.6);
-    const tempo = Math.max(2300, 1300 + FRASES[i].length * 38);
+    const tempo = Math.max(3200, 1800 + FRASES[i].length * 60);
     setTimeout(() => {
       if (G !== jogo) return;
       el.classList.remove("entra");
@@ -990,7 +978,7 @@
         jogo.bilheteAtivo = false;
         proximoBilhete();
       }, 300);
-    }, jogo.fim ? Math.min(tempo, 2000) : tempo);
+    }, jogo.fim ? Math.min(tempo, 3000) : tempo);
   }
 
   function atualizarMedidor() {
