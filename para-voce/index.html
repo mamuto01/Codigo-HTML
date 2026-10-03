@@ -1,869 +1,1130 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Para você</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --rosa: #ff6b9d;
-      --rosa-claro: #ffd1e1;
-      --lilas: #c3a6ff;
-      --fundo1: #2b1b3d;
-      --fundo2: #4a2c5a;
-      --texto: #fff6fa;
-      --papel: #fffaf3;
-      --tinta: #4a2c3a;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important} img{max-width:100%}</style>
+<title>Para a minha princesa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+  /* Layout: uma tela de app por vez, empilhadas. O jogo ocupa a tela toda; carta e foto rolam no centro.
+     Visual único e claro de propósito: leite de morango, lavanda e papel. */
+  :root {
+    --leite: #fff2f6;
+    --leite-2: #ffe3ec;
+    --papel: #fffdf9;
+    --morango: #ff6f96;
+    --morango-esc: #e04d79;
+    --rosa-suave: #ffc4d5;
+    --lavanda: #c9b6ff;
+    --mel: #ffc24a;
+    --ameixa: #5e3550;
+    --ameixa-suave: #946c84;
+    --sombra: rgba(94, 53, 80, .14);
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    --f-display: "Fredoka", "Nunito", ui-rounded, system-ui, sans-serif;
+    --f-corpo: "Nunito", ui-rounded, system-ui, sans-serif;
+    --f-mao: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    color-scheme: light;
+  }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--leite);
+    color: var(--ameixa);
+    font-family: var(--f-corpo);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 8%, #ffd3e2 0, transparent 38%),
+      radial-gradient(circle at 92% 88%, #e9e0ff 0, transparent 42%),
+      radial-gradient(rgba(255, 111, 150, .16) 1.3px, transparent 1.6px) 0 0 / 22px 22px;
+  }
 
-    body {
-      font-family: "Quicksand", sans-serif;
-      color: var(--texto);
-      background: radial-gradient(ellipse at top, var(--fundo2), var(--fundo1) 70%);
-      -webkit-tap-highlight-color: transparent;
-    }
+  #app { position: relative; height: 100%; }
+  .tela { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .rolagem {
+    height: 100%;
+    overflow-y: auto;
+    padding-block: 64px 40px;
+    padding-inline: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+  .centro { justify-content: center; text-align: center; }
 
-    /* Estrelinhas de fundo */
-    #estrelas {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .estrela {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: #fff;
-      border-radius: 50%;
-      opacity: .6;
-      animation: piscar 3s infinite ease-in-out;
-    }
-    @keyframes piscar {
-      0%, 100% { opacity: .15; }
-      50% { opacity: .9; }
-    }
+  h1, .display { font-family: var(--f-display); text-wrap: balance; }
 
-    .tela {
-      position: fixed;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-      text-align: center;
-      z-index: 1;
-    }
-    .tela.ativa {
-      display: flex;
-      animation: aparecer .9s ease;
-    }
-    @keyframes aparecer {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: none; }
-    }
+  .btn {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: #fff;
+    background: var(--morango);
+    border: none;
+    padding: 14px 32px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--morango-esc), 0 14px 26px rgba(255, 111, 150, .28);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--morango-esc), 0 6px 12px rgba(255, 111, 150, .25); }
+  .btn:focus-visible, .link:focus-visible, .som:focus-visible { outline: 3px solid var(--lavanda); outline-offset: 3px; }
+  .link {
+    background: none;
+    border: none;
+    font: 700 .95rem var(--f-corpo);
+    color: var(--ameixa-suave);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding: 8px;
+  }
 
-    h1, .cursiva {
-      font-family: "Dancing Script", cursive;
-    }
-    h1 {
-      font-size: clamp(2.4rem, 9vw, 4rem);
-      color: var(--rosa-claro);
-      text-shadow: 0 0 24px rgba(255, 107, 157, .5);
-      margin-bottom: 12px;
-    }
-    p.sub {
-      font-size: 1.05rem;
-      max-width: 440px;
-      line-height: 1.6;
-      opacity: .9;
-      margin-bottom: 28px;
-    }
+  .som {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 14px;
+    z-index: 40;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--rosa-suave);
+    background: var(--papel);
+    color: var(--ameixa);
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px var(--sombra);
+  }
 
-    .botao {
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #fff;
-      background: linear-gradient(135deg, var(--rosa), #e0559b);
-      border: none;
-      padding: 14px 32px;
-      border-radius: 999px;
-      cursor: pointer;
-      box-shadow: 0 8px 24px rgba(255, 107, 157, .35);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .botao:hover { transform: translateY(-2px) scale(1.03); }
-    .botao:active { transform: scale(.97); }
-    .botao.secundario {
-      background: transparent;
-      border: 2px solid var(--rosa-claro);
-      box-shadow: none;
-    }
+  /* ---------- Abertura ---------- */
+  .intro { max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .olho {
+    font: 800 .78rem var(--f-corpo);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--morango-esc);
+    margin: 0;
+  }
+  .intro h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 11vw, 3.6rem);
+    line-height: 1.05;
+    font-weight: 700;
+  }
+  .princesa { position: relative; color: var(--morango); display: inline-block; }
+  .princesa svg {
+    position: absolute;
+    width: .9em;
+    top: -.42em;
+    right: -.38em;
+    transform: rotate(20deg);
+  }
+  .intro-sub { margin: 0; font-size: 1.08rem; line-height: 1.55; color: var(--ameixa-suave); }
+  .pote-intro { width: 132px; height: 150px; animation: balanca 3s ease-in-out infinite; }
+  @keyframes balanca { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-6px); } }
+  .dica-som { margin: 0; font-size: .85rem; color: var(--ameixa-suave); }
 
-    /* Coração pulsando na abertura */
-    .coracao-grande {
-      font-size: 5rem;
-      animation: pulsar 1.4s infinite;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 0 20px rgba(255, 107, 157, .6));
-    }
-    @keyframes pulsar {
-      0%, 100% { transform: scale(1); }
-      15% { transform: scale(1.15); }
-      30% { transform: scale(1); }
-      45% { transform: scale(1.1); }
-    }
+  .flutua {
+    position: absolute;
+    color: var(--rosa-suave);
+    pointer-events: none;
+    animation: sobe-lento 9s linear infinite;
+    bottom: -40px;
+  }
+  @keyframes sobe-lento {
+    from { transform: translateY(0) rotate(-10deg); opacity: 0; }
+    10% { opacity: 1; }
+    to { transform: translateY(-115vh) rotate(14deg); opacity: 0; }
+  }
 
-    /* ===== JOGO ===== */
-    #tela-jogo {
-      padding: 0;
-      justify-content: flex-start;
-    }
-    #hud {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      max-width: 520px;
-      padding: 16px 16px 0;
-    }
-    #hud .titulo {
-      font-family: "Dancing Script", cursive;
-      font-size: 1.6rem;
-      color: var(--rosa-claro);
-    }
-    #barra {
-      margin-top: 8px;
-      height: 12px;
-      background: rgba(255, 255, 255, .12);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    #barra-cheia {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--lilas), var(--rosa));
-      border-radius: 999px;
-      transition: width .4s ease;
-    }
-    #contador {
-      font-size: .85rem;
-      margin-top: 6px;
-      opacity: .8;
-    }
-    #canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-      cursor: none;
-    }
-    #mensagem-jogo {
-      position: absolute;
-      left: 50%;
-      top: 32%;
-      transform: translate(-50%, -50%);
-      width: min(90%, 440px);
-      font-family: "Dancing Script", cursive;
-      font-size: clamp(1.5rem, 6vw, 2.1rem);
-      color: #fff;
-      text-shadow: 0 2px 16px rgba(0, 0, 0, .6), 0 0 20px rgba(255, 107, 157, .6);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .5s;
-      z-index: 2;
-    }
-    #mensagem-jogo.visivel { opacity: 1; }
-    #dica {
-      position: absolute;
-      bottom: 120px;
-      left: 0;
-      right: 0;
-      font-size: .9rem;
-      opacity: .7;
-      pointer-events: none;
-      z-index: 2;
-      transition: opacity 1s;
-    }
+  /* ---------- Jogo ---------- */
+  #tela-jogo { touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden; }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    right: 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .hud-linha { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .hud-titulo { font: 600 1rem var(--f-display); }
+  .hud-pct { font: 800 .85rem var(--f-corpo); font-variant-numeric: tabular-nums; color: var(--morango-esc); }
+  .medidor {
+    height: 16px;
+    border-radius: 999px;
+    background: var(--papel);
+    border: 2px solid var(--rosa-suave);
+    overflow: hidden;
+  }
+  .medidor-cheio {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--lavanda), var(--morango));
+    transition: width .35s cubic-bezier(.3, 1.6, .5, 1);
+  }
+  .combo {
+    align-self: flex-start;
+    font: 700 .85rem var(--f-display);
+    color: #fff;
+    background: var(--lavanda);
+    padding: 3px 12px;
+    border-radius: 999px;
+    opacity: 0;
+    transform: scale(.6);
+    transition: opacity .2s, transform .2s cubic-bezier(.3, 1.8, .5, 1);
+  }
+  .combo.on { opacity: 1; transform: scale(1); }
+  .combo.quente { background: var(--morango); }
 
-    /* ===== CARTA ===== */
-    #tela-carta {
-      overflow-y: auto;
-      justify-content: flex-start;
-      padding-top: 72px;
-      padding-bottom: 40px;
-    }
-    .carta {
-      background: var(--papel);
-      color: var(--tinta);
-      width: min(100%, 560px);
-      padding: 36px 28px;
-      border-radius: 6px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
-      text-align: left;
-      position: relative;
-      background-image: repeating-linear-gradient(
-        transparent, transparent 31px, rgba(200, 150, 170, .25) 32px
-      );
-      line-height: 32px;
-      flex-shrink: 0;
-    }
-    .carta::before {
-      content: "💌";
-      position: absolute;
-      top: -22px;
-      right: 22px;
-      font-size: 2.6rem;
-    }
-    .carta .saudacao {
-      font-family: "Dancing Script", cursive;
-      font-size: 2rem;
-      color: #c2416f;
-      margin-bottom: 8px;
-    }
-    .carta p {
-      font-size: 1.02rem;
-      margin-bottom: 16px;
-      min-height: 1em;
-    }
-    .carta .assinatura {
-      font-family: "Dancing Script", cursive;
-      font-size: 1.7rem;
-      text-align: right;
-      color: #c2416f;
-      margin-top: 10px;
-    }
-    .cursor-digitando::after {
-      content: "|";
-      animation: piscar-cursor .7s infinite;
-      color: #c2416f;
-    }
-    @keyframes piscar-cursor { 50% { opacity: 0; } }
-    #acoes-carta {
-      margin-top: 28px;
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity .8s;
-      pointer-events: none;
-    }
-    #acoes-carta.visivel { opacity: 1; pointer-events: auto; }
+  .bilhete {
+    position: absolute;
+    top: 104px;
+    left: 50%;
+    width: min(calc(100% - 40px), 360px);
+    background: var(--papel);
+    border-radius: 14px;
+    padding: 18px 18px 14px;
+    box-shadow: 0 14px 30px var(--sombra);
+    text-align: center;
+    pointer-events: none;
+    z-index: 6;
+    transform: translateX(-50%) rotate(-2deg);
+  }
+  .bilhete::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 84px;
+    height: 20px;
+    transform: translateX(-50%) rotate(3deg);
+    background: rgba(201, 182, 255, .75);
+    border-radius: 3px;
+  }
+  .bilhete-n { font: 800 .7rem var(--f-corpo); letter-spacing: .12em; text-transform: uppercase; color: var(--ameixa-suave); margin: 0 0 4px; }
+  .bilhete-t { font: 700 1.75rem/1.15 var(--f-mao); margin: 0; color: var(--ameixa); }
+  .bilhete.entra { animation: bilhete-in .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+  .bilhete.sai { animation: bilhete-out .3s ease-in both; }
+  @keyframes bilhete-in { from { opacity: 0; transform: translateX(-50%) translateY(-24px) rotate(-8deg) scale(.8); } }
+  @keyframes bilhete-out { to { opacity: 0; transform: translateX(-50%) translateY(-16px) rotate(2deg) scale(.9); } }
 
-    /* ===== MOTIVOS (cartas que viram) ===== */
-    #tela-motivos {
-      overflow-y: auto;
-      justify-content: flex-start;
-      padding-top: 40px;
-      padding-bottom: 40px;
-    }
-    #grade-motivos {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 14px;
-      width: min(100%, 620px);
-      margin: 10px 0 28px;
-      flex-shrink: 0;
-    }
-    .motivo {
-      perspective: 800px;
-      height: 170px;
-      cursor: pointer;
-    }
-    .motivo-interno {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transition: transform .7s;
-      transform-style: preserve-3d;
-    }
-    .motivo.virado .motivo-interno { transform: rotateY(180deg); }
-    .motivo-frente, .motivo-verso {
-      position: absolute;
-      inset: 0;
-      border-radius: 16px;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px;
-    }
-    .motivo-frente {
-      background: linear-gradient(135deg, var(--rosa), var(--lilas));
-      font-size: 2.4rem;
-      flex-direction: column;
-      gap: 6px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, .25);
-    }
-    .motivo-frente small {
-      font-size: .8rem;
-      font-weight: 700;
-      opacity: .9;
-    }
-    .motivo-verso {
-      background: var(--papel);
-      color: var(--tinta);
-      transform: rotateY(180deg);
-      font-size: .95rem;
-      line-height: 1.4;
-      font-weight: 500;
-    }
-    #fim-motivos {
-      opacity: 0;
-      transition: opacity .8s;
-      pointer-events: none;
-    }
-    #fim-motivos.visivel { opacity: 1; pointer-events: auto; }
+  .tutorial {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    width: min(calc(100% - 40px), 330px);
+    background: var(--papel);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 14px 34px var(--sombra);
+    text-align: center;
+    z-index: 7;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tutorial h2 { margin: 0; font: 600 1.3rem var(--f-display); }
+  .tutorial ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; text-align: left; font-size: .95rem; }
+  .tutorial li { display: flex; gap: 10px; align-items: center; }
+  .tutorial .ic { width: 28px; text-align: center; font-size: 1.2rem; flex: none; }
+  .mao { font-size: 2rem; animation: arrasta 1.6s ease-in-out infinite; display: inline-block; }
+  @keyframes arrasta { 0%, 100% { transform: translateX(-34px); } 50% { transform: translateX(34px); } }
+  .tutorial .toque { font: 700 .9rem var(--f-corpo); color: var(--morango-esc); margin: 0; }
 
-    /* ===== FINAL ===== */
-    #tela-final .promessa {
-      max-width: 460px;
-      line-height: 1.7;
-      font-size: 1.08rem;
-      margin: 8px 0 28px;
-      opacity: .95;
-    }
-    #abraco {
-      font-family: "Dancing Script", cursive;
-      font-size: 2rem;
-      color: var(--rosa-claro);
-      margin-top: 24px;
-      min-height: 2.6rem;
-    }
+  .vitoria {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 20px;
+    background: rgba(255, 242, 246, .72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .vit-card {
+    background: var(--papel);
+    border-radius: 24px;
+    padding: 28px 22px 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 44px var(--sombra);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    animation: pula .6s cubic-bezier(.3, 1.6, .5, 1) both;
+  }
+  @keyframes pula { from { opacity: 0; transform: scale(.7) translateY(20px); } }
+  .vit-frase { font: 700 2.6rem/1.05 var(--f-mao); color: var(--morango-esc); margin: 0; }
+  .vit-info { margin: 0; color: var(--ameixa-suave); font-size: .95rem; font-variant-numeric: tabular-nums; }
 
-    .coracao-flutuante {
-      position: fixed;
-      pointer-events: none;
-      z-index: 50;
-      animation: subir linear forwards;
-    }
-    @keyframes subir {
-      from { transform: translateY(0) rotate(0); opacity: 1; }
-      to { transform: translateY(-110vh) rotate(25deg); opacity: 0; }
-    }
+  /* ---------- Carta ---------- */
+  .carta {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    background: var(--papel);
+    border-radius: 20px;
+    padding: 40px 26px 28px;
+    box-shadow: 0 18px 40px var(--sombra);
+    font-family: var(--f-mao);
+    font-size: 1.62rem;
+    line-height: 1.3;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .carta p { margin: 0; animation: tinta .8s ease both; }
+  .carta p:nth-child(2) { animation-delay: .3s; }
+  .carta p:nth-child(3) { animation-delay: .9s; }
+  .carta p:nth-child(4) { animation-delay: 1.5s; }
+  .carta p:nth-child(5) { animation-delay: 2.1s; }
+  .carta p:nth-child(6) { animation-delay: 2.7s; }
+  @keyframes tinta { from { opacity: 0; transform: translateY(6px); filter: blur(2px); } }
+  .carta-ola { font-size: 2.2rem; font-weight: 700; color: var(--morango-esc); }
+  .carta-ass { text-align: right; font-weight: 700; color: var(--morango-esc); }
+  .selo {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--morango);
+    box-shadow: 0 4px 0 var(--morango-esc), 0 8px 16px rgba(255, 111, 150, .3);
+    display: grid;
+    place-items: center;
+  }
+  .selo svg { width: 22px; }
 
-    #musica {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 60;
-      background: rgba(255, 255, 255, .12);
-      border: none;
-      color: #fff;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-  </style>
+  /* ---------- Foto ---------- */
+  .polaroid {
+    margin: 0;
+    background: #fff;
+    padding: 12px 12px 0;
+    width: min(76vw, 300px);
+    max-width: 100%;
+    box-shadow: 0 18px 40px var(--sombra);
+    transform: rotate(-3deg);
+    position: relative;
+  }
+  .polaroid::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 96px;
+    height: 24px;
+    transform: translateX(-50%) rotate(-4deg);
+    background: rgba(255, 196, 213, .85);
+    border-radius: 3px;
+  }
+  .polaroid img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: 50% 35%; background: var(--leite-2); }
+  .polaroid.revela img { animation: revela 3s ease both; }
+  @keyframes revela { from { filter: brightness(2.4) saturate(0) blur(4px); } }
+  .polaroid figcaption { font: 700 1.6rem/1 var(--f-mao); color: var(--ameixa); text-align: center; padding: 12px 0 16px; }
+  .foto-legenda { font: 700 1.75rem/1.2 var(--f-mao); margin: 0; max-width: 340px; }
+  .abraco { font: 600 1.15rem var(--f-display); color: var(--morango-esc); margin: 0; min-height: 1.6em; }
+
+  .estoura {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    color: var(--morango);
+    animation: estoura linear forwards;
+  }
+  @keyframes estoura {
+    from { transform: translateY(0) rotate(0) scale(.6); opacity: 1; }
+    to { transform: translateY(-105vh) rotate(30deg) scale(1.1); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flutua, .pote-intro, .mao { animation: none; }
+    .flutua { display: none; }
+  }
+</style>
 </head>
 <body>
 
-  <div id="estrelas"></div>
-  <button id="musica" title="Som">🔈</button>
+<div id="app">
+  <button class="som" id="som" type="button" aria-label="Ligar ou desligar o som">♪</button>
 
-  <!-- ===== TELA 1: ABERTURA ===== -->
-  <section class="tela ativa" id="tela-inicio">
-    <div class="coracao-grande">💗</div>
-    <h1 id="titulo-inicio">Para você</h1>
-    <p class="sub" id="sub-inicio"></p>
-    <button class="botao" id="btn-comecar">Abrir com carinho</button>
-  </section>
-
-  <!-- ===== TELA 2: JOGO ===== -->
-  <section class="tela" id="tela-jogo">
-    <canvas id="canvas"></canvas>
-    <div id="hud">
-      <div class="titulo">Pegue os coraçõezinhos 💕</div>
-      <div id="barra"><div id="barra-cheia"></div></div>
-      <div id="contador">0 / 10</div>
-    </div>
-    <div id="mensagem-jogo"></div>
-    <div id="dica">Arraste o dedo (ou o mouse) para mover o potinho.<br>As nuvens cinzas não fazem mal — elas só passam. ☁️</div>
-  </section>
-
-  <!-- ===== TELA 3: CARTA ===== -->
-  <section class="tela" id="tela-carta">
-    <div class="carta">
-      <div class="saudacao" id="carta-saudacao"></div>
-      <div id="carta-corpo"></div>
-      <div class="assinatura" id="carta-assinatura"></div>
-    </div>
-    <div id="acoes-carta">
-      <button class="botao" id="btn-motivos">Tem mais uma coisa…</button>
+  <!-- Abertura -->
+  <section class="tela" id="tela-inicio">
+    <div class="rolagem centro">
+      <div class="intro">
+        <svg class="pote-intro" viewBox="0 0 132 150" aria-hidden="true">
+          <rect x="22" y="12" width="88" height="16" rx="8" fill="#ff8fb0"/>
+          <path d="M28 30 h76 q10 4 10 18 v72 q0 18 -18 18 h-60 q-18 0 -18 -18 v-72 q0 -14 10 -18z" fill="#ffffff" stroke="#ffc4d5" stroke-width="3"/>
+          <path d="M20 86 q23 -8 46 0 t46 0 v34 q0 16 -16 16 h-60 q-16 0 -16 -16z" fill="#ff8fb0"/>
+          <circle cx="50" cy="66" r="4" fill="#5e3550"/>
+          <circle cx="82" cy="66" r="4" fill="#5e3550"/>
+          <path d="M58 74 q8 8 16 0" stroke="#5e3550" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="40" cy="76" rx="6" ry="3.5" fill="#ffc4d5"/>
+          <ellipse cx="92" cy="76" rx="6" ry="3.5" fill="#ffc4d5"/>
+          <path d="M66 112 c-6 -6 -14 -2 -14 4 c0 6 14 12 14 12 s14 -6 14 -12 c0 -6 -8 -10 -14 -4z" fill="#ffffff"/>
+        </svg>
+        <p class="olho">um joguinho feito pra você</p>
+        <h1>Para a minha <span class="princesa">princesa<svg viewBox="0 0 40 26" aria-hidden="true"><path d="M3 22 L6 6 L14 14 L20 2 L26 14 L34 6 L37 22 Z" fill="#ffc24a" stroke="#e0a21f" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="17" r="2.6" fill="#ff6f96"/></svg></span></h1>
+        <p class="intro-sub">Encha o potinho de amor e vá descobrindo os bilhetinhos que eu escrevi pra você, minha diva.</p>
+        <button class="btn" id="btn-comecar" type="button">Começar ♡</button>
+        <p class="dica-som">Fica mais fofo com o som ligado.</p>
+      </div>
     </div>
   </section>
 
-  <!-- ===== TELA 4: MOTIVOS ===== -->
-  <section class="tela" id="tela-motivos">
-    <h1>Motivos</h1>
-    <p class="sub">Toque em cada cartinha. Cada uma guarda um motivo pelo qual eu te amo.</p>
-    <div id="grade-motivos"></div>
-    <div id="fim-motivos">
-      <button class="botao" id="btn-final">Só mais uma ❤️</button>
+  <!-- Jogo -->
+  <section class="tela" id="tela-jogo" hidden>
+    <canvas id="cv"></canvas>
+    <div class="hud">
+      <div class="hud-linha">
+        <span class="hud-titulo">Potinho do amor</span>
+        <span class="hud-pct" id="pct">0%</span>
+      </div>
+      <div class="medidor"><div class="medidor-cheio" id="medidor"></div></div>
+      <span class="combo" id="combo">combo x3</span>
+    </div>
+
+    <div class="bilhete" id="bilhete" hidden>
+      <p class="bilhete-n" id="bilhete-n"></p>
+      <p class="bilhete-t" id="bilhete-t"></p>
+    </div>
+
+    <div class="tutorial" id="tutorial">
+      <h2>Como jogar</h2>
+      <ul>
+        <li><span class="ic">💗</span><span>Pegue os coraçõezinhos com o potinho</span></li>
+        <li><span class="ic">💛</span><span>Os dourados valem muito mais</span></li>
+        <li><span class="ic">🎁</span><span>O presente puxa os corações pra você</span></li>
+        <li><span class="ic">☁️</span><span>Desvie das nuvenzinhas tristes</span></li>
+      </ul>
+      <div><span class="mao" aria-hidden="true">👆</span></div>
+      <p class="toque">Arraste o dedo pra começar</p>
+    </div>
+
+    <div class="vitoria" id="vitoria" hidden>
+      <div class="vit-card">
+        <p class="olho">potinho cheio!</p>
+        <p class="vit-frase" id="vit-frase"></p>
+        <p class="vit-info" id="vit-info"></p>
+        <button class="btn" id="btn-carta" type="button">Abrir a cartinha</button>
+      </div>
     </div>
   </section>
 
-  <!-- ===== TELA 5: FINAL ===== -->
-  <section class="tela" id="tela-final">
-    <div class="coracao-grande">💖</div>
-    <h1 id="final-titulo">Eu te amo</h1>
-    <p class="promessa" id="final-texto"></p>
-    <button class="botao" id="btn-abraco">Me dá um abraço?</button>
-    <div id="abraco"></div>
+  <!-- Carta -->
+  <section class="tela" id="tela-carta" hidden>
+    <div class="rolagem">
+      <article class="carta" id="carta">
+        <span class="selo" aria-hidden="true"><svg viewBox="0 0 24 22"><path d="M12 21 C4 15 1 11 1 7 C1 3.5 3.8 1 7 1 C9.2 1 11 2.2 12 4 C13 2.2 14.8 1 17 1 C20.2 1 23 3.5 23 7 C23 11 20 15 12 21Z" fill="#fff"/></svg></span>
+        <p class="carta-ola">Minha diva,</p>
+        <p>Às vezes, tenho muita dificuldade em demonstrar o quanto você é incrível na minha vida e o quanto eu amo você.</p>
+        <p>Sei que estou passando por um momento difícil, mas tenho fé em Deus de que tudo isso vai passar. E quero dar o melhor de mim por você, minha gatinha.</p>
+        <p>Quero que saiba que sempre vai poder contar comigo. Sua presença me faz muito bem.</p>
+        <p>Nunca se esqueça de que você é muito especial para mim.</p>
+        <p class="carta-ass">Com todo o meu amor ♡</p>
+      </article>
+      <button class="btn" id="btn-foto" type="button">Tem mais uma coisinha…</button>
+    </div>
   </section>
 
-  <script>
-    /* =====================================================================
-       PERSONALIZE AQUI ✏️
-       Troque os textos abaixo pelas suas próprias palavras.
-       Quanto mais com a sua cara, mais especial fica.
-       ===================================================================== */
-    const CONFIG = {
-      nomeDela: "Meu amor",          // o nome ou apelido dela
-      seuNome: "Seu amor",           // como você quer assinar
+  <!-- Foto -->
+  <section class="tela" id="tela-foto" hidden>
+    <div class="rolagem centro">
+      <figure class="polaroid" id="polaroid">
+        <img src="foto.jpg" alt="Nós dois juntinhos, à noite, sorrindo para a câmera" onerror="this.closest('figure').hidden=true">
+        <figcaption>nós dois ♡</figcaption>
+      </figure>
+      <p class="foto-legenda">Eu sei que você não gosta muito dessa foto… mas eu amo ela.</p>
+      <button class="btn" id="btn-abraco" type="button">Me dá um abraço?</button>
+      <p class="abraco" id="abraco" aria-live="polite"></p>
+      <button class="link" id="btn-denovo" type="button">jogar de novo</button>
+    </div>
+  </section>
+</div>
 
-      textoAbertura:
-        "Eu fiz uma coisinha pra você. É simples, mas foi feita com todo o carinho que às vezes eu não consigo mostrar.",
+<script>
+  /* Bilhetinhos que aparecem no jogo. O último aparece quando o potinho enche. */
+  const FRASES = [
+    "Obrigado pela paciência.",
+    "Eu agradeço a Deus todos os dias por ter você em minha vida.",
+    "Você me incentiva a ser uma pessoa melhor.",
+    "Você me ajuda nos momentos difíceis.",
+    "Eu aprendo muito com você.",
+    "Você é o amor da minha vida.",
+    "Você é a melhor pessoa deste mundo.",
+    "Eu escrevi esses textos manualmente, ksks.",
+    "Sei que você não gosta de IA.",
+    "Eu amo muito você."
+  ];
 
-      // Frases que aparecem quando ela pega cada coração no jogo (10 frases)
-      frasesJogo: [
-        "Obrigado por ficar.",
-        "Você é o meu lugar seguro.",
-        "Seu abraço me acalma.",
-        "Mesmo calado, eu penso em você.",
-        "Você deixa os dias mais leves.",
-        "Obrigado pela paciência.",
-        "Seu sorriso me salva.",
-        "Eu te escolho todos os dias.",
-        "Você não está sozinha nisso.",
-        "Meu coração é seu. ❤️"
-      ],
+  const $ = (id) => document.getElementById(id);
+  const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // A carta. Cada item vira um parágrafo.
-      carta: [
-        "Eu sei que nem sempre é fácil estar ao meu lado agora.",
-        "A depressão às vezes rouba de mim a energia, a vontade de falar, de sair, de demonstrar. Às vezes eu fico quieto, distante, e sei que isso pode fazer você se sentir insegura. Mas quero que você saiba de uma coisa, com toda a certeza que eu tenho: o meu silêncio nunca é falta de amor.",
-        "Nos dias cinzas, você é a parte colorida. Quando eu não consigo dizer, eu ainda sinto. Quando eu não consigo mostrar, eu ainda estou aqui, te amando do jeito que dá.",
-        "Obrigado pela sua paciência, pelo seu cuidado, por não desistir de mim nos dias em que nem eu mesmo consigo me entender. Isso significa mais do que qualquer palavra consegue explicar.",
-        "Eu estou me cuidando e vou continuar tentando, por mim e por nós. E enquanto isso, quero que você guarde isto: você é amada. Muito. Todos os dias. Mesmo nos dias em que eu não consigo dizer."
-      ],
+  function irPara(id) {
+    document.querySelectorAll(".tela").forEach((t) => { t.hidden = t.id !== id; });
+  }
 
-      // Motivos (cartinhas que viram). Pode colocar quantos quiser.
-      motivos: [
-        "Seu jeito de cuidar de mim sem eu precisar pedir.",
-        "Sua risada, que conserta qualquer dia ruim.",
-        "Você me enxerga mesmo quando eu me escondo.",
-        "Sua paciência, que é maior do que eu mereço.",
-        "O jeito que você fala das coisas que ama.",
-        "Porque com você eu me sinto em casa."
-      ],
-
-      tituloFinal: "Eu te amo",
-      textoFinal:
-        "Não importa quantas nuvens passem, você continua sendo o meu céu. Quando eu estiver quieto, lembra deste lugarzinho aqui. Ele vai continuar dizendo por mim: eu te amo, eu sou grato por você, e eu estou aqui.",
-      mensagemAbraco: "Abraço apertado enviado 🤍 Pode cobrar pessoalmente."
-    };
-    /* ===================================================================== */
-
-    const $ = (id) => document.getElementById(id);
-
-    // ---------- Fundo de estrelas ----------
-    (function criarEstrelas() {
-      const box = $("estrelas");
-      for (let i = 0; i < 70; i++) {
-        const s = document.createElement("div");
-        s.className = "estrela";
-        s.style.left = Math.random() * 100 + "%";
-        s.style.top = Math.random() * 100 + "%";
-        s.style.animationDelay = Math.random() * 3 + "s";
-        const tam = Math.random() < 0.15 ? 3 : 2;
-        s.style.width = s.style.height = tam + "px";
-        box.appendChild(s);
-      }
-    })();
-
-    // ---------- Navegação entre telas ----------
-    function irPara(id) {
-      document.querySelectorAll(".tela").forEach((t) => t.classList.remove("ativa"));
-      $(id).classList.add("ativa");
+  /* ---------- Corações flutuando na abertura ---------- */
+  (function () {
+    const tela = $("tela-inicio");
+    for (let i = 0; i < 12; i++) {
+      const s = document.createElement("span");
+      s.className = "flutua";
+      s.textContent = "♥";
+      s.style.left = Math.random() * 100 + "%";
+      s.style.fontSize = 14 + Math.random() * 22 + "px";
+      s.style.animationDelay = -Math.random() * 9 + "s";
+      s.style.animationDuration = 7 + Math.random() * 6 + "s";
+      tela.appendChild(s);
     }
+  })();
 
-    // ---------- Corações flutuantes ----------
-    function chuvaDeCoracoes(qtd = 30) {
-      const emojis = ["💗", "💖", "💕", "❤️", "🤍", "💜"];
-      for (let i = 0; i < qtd; i++) {
-        setTimeout(() => {
-          const c = document.createElement("div");
-          c.className = "coracao-flutuante";
-          c.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-          c.style.left = Math.random() * 100 + "vw";
-          c.style.bottom = "-40px";
-          c.style.fontSize = 16 + Math.random() * 26 + "px";
-          c.style.animationDuration = 3 + Math.random() * 3 + "s";
-          document.body.appendChild(c);
-          setTimeout(() => c.remove(), 6500);
-        }, i * 90);
-      }
-    }
-
-    // ---------- Som (sininhos suaves gerados no navegador) ----------
-    let audioCtx = null;
-    let somLigado = true;
-    function tocarNota(freq, dur = 0.5, vol = 0.12) {
-      if (!somLigado) return;
-      try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = "sine";
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(vol, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-        o.connect(g).connect(audioCtx.destination);
-        o.start();
-        o.stop(audioCtx.currentTime + dur);
-      } catch (e) { /* sem áudio, tudo bem */ }
-    }
-    const escala = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
-    $("musica").textContent = "🔊";
-    $("musica").addEventListener("click", () => {
-      somLigado = !somLigado;
-      $("musica").textContent = somLigado ? "🔊" : "🔈";
-    });
-
-    // ---------- Tela inicial ----------
-    $("titulo-inicio").textContent = "Para " + CONFIG.nomeDela;
-    $("sub-inicio").textContent = CONFIG.textoAbertura;
-    $("btn-comecar").addEventListener("click", () => {
-      tocarNota(659.25, 0.6);
-      irPara("tela-jogo");
-      iniciarJogo();
-    });
-
-    // =====================================================================
-    // JOGO: pegar corações com o potinho
-    // =====================================================================
-    const canvas = $("canvas");
-    const ctx = canvas.getContext("2d");
-    const META = CONFIG.frasesJogo.length;
-    let W, H, dpr;
-    let pote, itens, pegos, rodando, ultimoSpawn, tempoMensagem, particulas;
-
-    function redimensionar() {
-      dpr = window.devicePixelRatio || 1;
-      W = canvas.clientWidth;
-      H = canvas.clientHeight;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (pote) pote.y = H - 70;
-    }
-    window.addEventListener("resize", redimensionar);
-
-    function moverPote(clientX) {
-      if (!pote) return;
-      const r = canvas.getBoundingClientRect();
-      pote.alvoX = Math.max(pote.w / 2, Math.min(W - pote.w / 2, clientX - r.left));
-      $("dica").style.opacity = 0;
-    }
-    canvas.addEventListener("mousemove", (e) => moverPote(e.clientX));
-    canvas.addEventListener("touchstart", (e) => moverPote(e.touches[0].clientX), { passive: true });
-    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); moverPote(e.touches[0].clientX); }, { passive: false });
-
-    function iniciarJogo() {
-      redimensionar();
-      pote = { x: W / 2, alvoX: W / 2, y: H - 70, w: 86, h: 64, brilho: 0 };
-      itens = [];
-      particulas = [];
-      pegos = 0;
-      ultimoSpawn = 0;
-      tempoMensagem = null;
-      rodando = true;
-      atualizarHud();
-      requestAnimationFrame(loop);
-    }
-
-    function atualizarHud() {
-      $("barra-cheia").style.width = (pegos / META) * 100 + "%";
-      $("contador").textContent = pegos + " / " + META;
-    }
-
-    function criarItem() {
-      const nuvem = Math.random() < 0.28 && pegos > 0;
-      itens.push({
-        tipo: nuvem ? "nuvem" : "coracao",
-        x: 30 + Math.random() * (W - 60),
-        y: -30,
-        vy: nuvem ? 1.1 + Math.random() * 0.6 : 1.6 + Math.random() * 1.2 + pegos * 0.06,
-        balanco: Math.random() * Math.PI * 2,
-        tam: nuvem ? 26 : 18 + Math.random() * 6,
-        cor: ["#ff6b9d", "#ff8fb3", "#e0559b", "#c3a6ff"][Math.floor(Math.random() * 4)]
-      });
-    }
-
-    function desenharCoracao(x, y, s, cor) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(s / 16, s / 16);
-      ctx.beginPath();
-      ctx.moveTo(0, 5);
-      ctx.bezierCurveTo(-1, 3, -16, -3, -8, -11);
-      ctx.bezierCurveTo(-3, -15, 0, -10, 0, -8);
-      ctx.bezierCurveTo(0, -10, 3, -15, 8, -11);
-      ctx.bezierCurveTo(16, -3, 1, 3, 0, 5);
-      ctx.closePath();
-      ctx.shadowColor = cor;
-      ctx.shadowBlur = 14;
-      ctx.fillStyle = cor;
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function desenharNuvem(x, y, s) {
-      ctx.save();
-      ctx.fillStyle = "rgba(170, 170, 190, .55)";
-      ctx.beginPath();
-      ctx.arc(x - s * 0.5, y, s * 0.45, 0, Math.PI * 2);
-      ctx.arc(x, y - s * 0.25, s * 0.6, 0, Math.PI * 2);
-      ctx.arc(x + s * 0.55, y, s * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function desenharPote() {
-      const { x, y, w, h } = pote;
-      ctx.save();
-      // brilho quando pega um coração
-      if (pote.brilho > 0) {
-        ctx.shadowColor = "#ff6b9d";
-        ctx.shadowBlur = 30 * pote.brilho;
-      }
-      // corpo do pote (vidro)
-      ctx.fillStyle = "rgba(255, 255, 255, .14)";
-      ctx.strokeStyle = "rgba(255, 220, 235, .85)";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(x - w / 2, y - h / 2);
-      ctx.lineTo(x - w / 2 + 6, y + h / 2 - 8);
-      ctx.quadraticCurveTo(x - w / 2 + 8, y + h / 2, x - w / 2 + 18, y + h / 2);
-      ctx.lineTo(x + w / 2 - 18, y + h / 2);
-      ctx.quadraticCurveTo(x + w / 2 - 8, y + h / 2, x + w / 2 - 6, y + h / 2 - 8);
-      ctx.lineTo(x + w / 2, y - h / 2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // "líquido" de amor enchendo o pote
-      const nivel = (pegos / META) * (h - 10);
-      if (nivel > 0) {
-        ctx.save();
-        ctx.clip();
-        const grad = ctx.createLinearGradient(0, y + h / 2 - nivel, 0, y + h / 2);
-        grad.addColorStop(0, "rgba(255, 107, 157, .9)");
-        grad.addColorStop(1, "rgba(195, 166, 255, .9)");
-        ctx.fillStyle = grad;
-        ctx.fillRect(x - w / 2, y + h / 2 - nivel, w, nivel);
-        ctx.restore();
-      }
-
-      // borda/tampa
-      ctx.fillStyle = "rgba(255, 209, 225, .9)";
-      ctx.fillRect(x - w / 2 - 4, y - h / 2 - 6, w + 8, 7);
-      // laço
-      desenharCoracao(x, y + 4, 12, "#fff");
-      ctx.restore();
-    }
-
-    function soltarParticulas(x, y, cor) {
-      for (let i = 0; i < 12; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const v = 1 + Math.random() * 3;
-        particulas.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.5, vida: 1, cor });
-      }
-    }
-
-    function mostrarMensagem(texto) {
-      const el = $("mensagem-jogo");
-      el.textContent = texto;
-      el.classList.add("visivel");
-      clearTimeout(tempoMensagem);
-      tempoMensagem = setTimeout(() => el.classList.remove("visivel"), 2200);
-    }
-
-    function loop(t) {
-      if (!rodando) return;
-      ctx.clearRect(0, 0, W, H);
-
-      // criar novos itens
-      const intervalo = Math.max(520, 950 - pegos * 30);
-      if (t - ultimoSpawn > intervalo) {
-        criarItem();
-        ultimoSpawn = t;
-      }
-
-      // pote segue o dedo suavemente
-      pote.x += (pote.alvoX - pote.x) * 0.25;
-      pote.brilho = Math.max(0, pote.brilho - 0.03);
-
-      // atualizar itens
-      for (let i = itens.length - 1; i >= 0; i--) {
-        const it = itens[i];
-        it.y += it.vy;
-        it.balanco += 0.04;
-        const xv = it.x + Math.sin(it.balanco) * 12;
-
-        if (it.tipo === "coracao") desenharCoracao(xv, it.y, it.tam, it.cor);
-        else desenharNuvem(xv, it.y, it.tam);
-
-        // colisão com a boca do pote
-        const dentroX = Math.abs(xv - pote.x) < pote.w / 2 + 6;
-        const dentroY = it.y > pote.y - pote.h / 2 - 10 && it.y < pote.y + 6;
-        if (dentroX && dentroY) {
-          if (it.tipo === "coracao") {
-            pegos++;
-            pote.brilho = 1;
-            soltarParticulas(xv, it.y, it.cor);
-            tocarNota(escala[pegos % escala.length], 0.7);
-            mostrarMensagem(CONFIG.frasesJogo[pegos - 1]);
-            atualizarHud();
-            if (pegos >= META) {
-              terminarJogo();
-            }
-          } else {
-            // nuvem: nada de punição, ela só se desfaz
-            soltarParticulas(xv, it.y, "rgba(200,200,215,.8)");
-            tocarNota(220, 0.4, 0.05);
-          }
-          itens.splice(i, 1);
-          continue;
-        }
-        if (it.y > H + 40) itens.splice(i, 1);
-      }
-
-      // partículas
-      for (let i = particulas.length - 1; i >= 0; i--) {
-        const p = particulas[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.08;
-        p.vida -= 0.025;
-        if (p.vida <= 0) { particulas.splice(i, 1); continue; }
-        ctx.globalAlpha = p.vida;
-        desenharCoracao(p.x, p.y, 6, p.cor);
-        ctx.globalAlpha = 1;
-      }
-
-      desenharPote();
-      requestAnimationFrame(loop);
-    }
-
-    function terminarJogo() {
-      rodando = false;
-      chuvaDeCoracoes(40);
-      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => setTimeout(() => tocarNota(f, 0.9), i * 160));
+  function chuva(qtd) {
+    if (reduzir) qtd = Math.min(qtd, 8);
+    const cores = ["#ff6f96", "#ff8fb0", "#c9b6ff", "#ffc24a", "#ffc4d5"];
+    for (let i = 0; i < qtd; i++) {
       setTimeout(() => {
-        $("mensagem-jogo").classList.remove("visivel");
-        irPara("tela-carta");
-        escreverCarta();
-      }, 2800);
+        const c = document.createElement("span");
+        c.className = "estoura";
+        c.textContent = "♥";
+        c.style.left = Math.random() * 100 + "vw";
+        c.style.bottom = "-30px";
+        c.style.color = cores[i % cores.length];
+        c.style.fontSize = 16 + Math.random() * 28 + "px";
+        c.style.animationDuration = 2.6 + Math.random() * 2.4 + "s";
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 5200);
+      }, i * 45);
+    }
+  }
+
+  /* ---------- Som (notinhas geradas no navegador) ---------- */
+  let ac = null;
+  let som = true;
+  function nota(freq, dur = 0.35, vol = 0.08, tipo = "sine", atraso = 0) {
+    if (!som) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === "suspended") ac.resume();
+      const t = ac.currentTime + atraso;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = tipo;
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g);
+      g.connect(ac.destination);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* sem som, tudo bem */ }
+  }
+  const ESCALA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+  function arpejo(notas, passo = 0.09, dur = 0.5) { notas.forEach((f, i) => nota(f, dur, 0.07, "sine", i * passo)); }
+  function vibrar(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  $("som").addEventListener("click", () => {
+    som = !som;
+    $("som").textContent = som ? "♪" : "×";
+    $("som").setAttribute("aria-pressed", String(!som));
+  });
+
+  /* =====================================================================
+     JOGO
+     ===================================================================== */
+  const cv = $("cv");
+  const cx = cv.getContext("2d");
+  let W = 0, H = 0, escala = 1;
+  let J = null;   // o potinho
+  let G = null;   // estado do jogo
+  let quadro = 0;
+
+  function medir() {
+    const r = cv.getBoundingClientRect();
+    W = r.width;
+    H = r.height;
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * d);
+    cv.height = Math.round(H * d);
+    cx.setTransform(d, 0, 0, d, 0, 0);
+    escala = Math.max(0.85, Math.min(1.25, H / 760));
+    if (J) {
+      J.y = H - Math.max(92, H * 0.13);
+      J.x = J.tx = Math.min(Math.max(J.x, J.w / 2), W - J.w / 2);
+    }
+  }
+  window.addEventListener("resize", () => { if (!$("tela-jogo").hidden) medir(); });
+
+  function novoJogo() {
+    medir();
+    J = { x: W / 2, tx: W / 2, y: H - Math.max(92, H * 0.13), w: 96, h: 86, feliz: 0, triste: 0, aperta: 0, brilho: 0 };
+    G = {
+      comecou: false, fim: false, mostrouVitoria: false,
+      pontos: 0, combo: 0, maiorCombo: 0, pegos: 0,
+      itens: [], parts: [], textos: [],
+      acc: 0, ima: 0, tremor: 0, tempo: 0,
+      desbloq: 0, fila: [], bilheteAtivo: false
+    };
+    $("tutorial").hidden = false;
+    $("vitoria").hidden = true;
+    $("bilhete").hidden = true;
+    atualizarMedidor();
+    atualizarCombo();
+    cancelAnimationFrame(quadro);
+    let ultimo = performance.now();
+    const passo = (agora) => {
+      const dt = Math.min(0.05, (agora - ultimo) / 1000);
+      ultimo = agora;
+      atualizar(dt);
+      desenhar();
+      quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+  }
+
+  /* Controles: o potinho segue o dedo (ou o mouse) em qualquer parte da tela */
+  const telaJogo = $("tela-jogo");
+  function mirar(e) {
+    if (!J || G.fim) return;
+    const r = cv.getBoundingClientRect();
+    J.tx = Math.max(J.w / 2, Math.min(W - J.w / 2, e.clientX - r.left));
+    if (!G.comecou && (e.type === "pointerdown" || e.pointerType === "mouse")) {
+      G.comecou = true;
+      $("tutorial").hidden = true;
+      nota(784, 0.3);
+    }
+  }
+  telaJogo.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    try { telaJogo.setPointerCapture(e.pointerId); } catch (err) {}
+    mirar(e);
+  });
+  telaJogo.addEventListener("pointermove", mirar);
+
+  const progresso = () => G.pontos / 100;
+
+  function nascer() {
+    const p = progresso();
+    const sorte = Math.random();
+    let tipo = "coracao";
+    const chanceNuvem = G.pontos > 8 ? 0.15 + p * 0.1 : 0;
+    if (sorte < chanceNuvem) tipo = "nuvem";
+    else if (sorte < chanceNuvem + 0.1) tipo = "ouro";
+    else if (sorte < chanceNuvem + 0.14 && G.ima <= 0 && G.pontos > 15 && !G.itens.some((i) => i.tipo === "ima")) tipo = "ima";
+
+    const r = tipo === "nuvem" ? 28 : tipo === "ouro" ? 19 : tipo === "ima" ? 22 : 16 + Math.random() * 5;
+    const base = (170 + 240 * p) * escala;
+    const fator = tipo === "nuvem" ? 0.72 : tipo === "ima" ? 0.8 : tipo === "ouro" ? 1.15 : 1;
+    G.itens.push({
+      tipo, r,
+      x: r + Math.random() * (W - r * 2),
+      y: -r - 8,
+      vx: tipo === "nuvem" ? (Math.random() - 0.5) * 70 : 0,
+      vy: base * fator * (0.85 + Math.random() * 0.3),
+      fase: Math.random() * 6.28,
+      cor: ["#ff6f96", "#ff8fb0", "#f45a8a", "#c9a5ff"][Math.floor(Math.random() * 4)]
+    });
+  }
+
+  function atualizar(dt) {
+    G.tempo += dt;
+    J.x += (J.tx - J.x) * Math.min(1, dt * (J.triste > 0 ? 8 : 20));
+    J.feliz = Math.max(0, J.feliz - dt);
+    J.triste = Math.max(0, J.triste - dt);
+    J.aperta = Math.max(0, J.aperta - dt * 4);
+    J.brilho = Math.max(0, J.brilho - dt * 2);
+    G.tremor = Math.max(0, G.tremor - dt);
+    G.ima = Math.max(0, G.ima - dt);
+
+    if (G.comecou && !G.fim) {
+      G.acc += dt;
+      const intervalo = 0.78 - 0.36 * progresso();
+      while (G.acc > intervalo) { G.acc -= intervalo; nascer(); }
     }
 
-    // =====================================================================
-    // CARTA com efeito de máquina de escrever
-    // =====================================================================
-    async function escreverCarta() {
-      $("carta-saudacao").textContent = CONFIG.nomeDela + ",";
-      const corpo = $("carta-corpo");
-      corpo.innerHTML = "";
-      let pular = false;
-      const pularTudo = () => { pular = true; };
-      $("tela-carta").addEventListener("click", pularTudo, { once: true });
+    const boca = J.y - J.h / 2;
+    for (let i = G.itens.length - 1; i >= 0; i--) {
+      const it = G.itens[i];
+      it.fase += dt * 3;
+      const atraido = G.ima > 0 && (it.tipo === "coracao" || it.tipo === "ouro") && it.y < boca;
+      if (atraido) it.vx += ((J.x - it.x) * 9 - it.vx * 3) * dt;
+      it.x += it.vx * dt;
+      it.y += it.vy * dt;
+      if (it.tipo === "nuvem" && (it.x < it.r || it.x > W - it.r)) it.vx *= -1;
+      it.vis = it.tipo === "nuvem" || atraido ? it.x : it.x + Math.sin(it.fase) * 10;
 
-      for (const paragrafo of CONFIG.carta) {
-        const p = document.createElement("p");
-        p.classList.add("cursor-digitando");
-        corpo.appendChild(p);
-        for (let i = 0; i < paragrafo.length; i++) {
-          if (pular) { p.textContent = paragrafo; break; }
-          p.textContent += paragrafo[i];
-          await esperar(paragrafo[i] === "." || paragrafo[i] === "," ? 180 : 32);
-        }
-        p.classList.remove("cursor-digitando");
-        if (!pular) await esperar(500);
+      if (G.fim) { it.y += 300 * dt; }
+      else if (Math.abs(it.vis - J.x) < J.w / 2 + it.r * 0.4 && it.y + it.r * 0.6 > boca && it.y < boca + 30) {
+        pegar(it);
+        G.itens.splice(i, 1);
+        continue;
       }
-      $("carta-assinatura").textContent = "Com amor, " + CONFIG.seuNome;
-      $("acoes-carta").classList.add("visivel");
-    }
-    const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-
-    $("btn-motivos").addEventListener("click", (e) => {
-      e.stopPropagation();
-      irPara("tela-motivos");
-      montarMotivos();
-    });
-
-    // =====================================================================
-    // MOTIVOS
-    // =====================================================================
-    function montarMotivos() {
-      const grade = $("grade-motivos");
-      grade.innerHTML = "";
-      let virados = 0;
-      const icones = ["💌", "🌷", "✨", "🌙", "🦋", "🌻", "🍓", "🎀"];
-      CONFIG.motivos.forEach((texto, i) => {
-        const card = document.createElement("div");
-        card.className = "motivo";
-        card.innerHTML = `
-          <div class="motivo-interno">
-            <div class="motivo-frente">${icones[i % icones.length]}<small>Motivo nº ${i + 1}</small></div>
-            <div class="motivo-verso"></div>
-          </div>`;
-        card.querySelector(".motivo-verso").textContent = texto;
-        card.addEventListener("click", () => {
-          if (card.classList.contains("virado")) return;
-          card.classList.add("virado");
-          tocarNota(escala[i % escala.length], 0.6);
-          virados++;
-          if (virados === CONFIG.motivos.length) {
-            setTimeout(() => $("fim-motivos").classList.add("visivel"), 600);
-          }
-        });
-        grade.appendChild(card);
-      });
+      if (it.y - it.r > H) {
+        if (!G.fim && (it.tipo === "coracao" || it.tipo === "ouro") && G.combo > 0) { G.combo = 0; atualizarCombo(); }
+        G.itens.splice(i, 1);
+      }
     }
 
-    $("btn-final").addEventListener("click", () => {
-      irPara("tela-final");
-      $("final-titulo").textContent = CONFIG.tituloFinal;
-      $("final-texto").textContent = CONFIG.textoFinal;
-      chuvaDeCoracoes(25);
-    });
+    for (let i = G.parts.length - 1; i >= 0; i--) {
+      const p = G.parts[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 520 * dt;
+      p.vida -= dt * 1.4;
+      if (p.vida <= 0) G.parts.splice(i, 1);
+    }
+    for (let i = G.textos.length - 1; i >= 0; i--) {
+      const t = G.textos[i];
+      t.y -= 50 * dt;
+      t.vida -= dt * 1.1;
+      if (t.vida <= 0) G.textos.splice(i, 1);
+    }
 
-    // =====================================================================
-    // FINAL
-    // =====================================================================
-    $("btn-abraco").addEventListener("click", () => {
-      chuvaDeCoracoes(60);
-      [523.25, 659.25, 783.99, 659.25, 1046.5].forEach((f, i) => setTimeout(() => tocarNota(f, 1), i * 200));
-      $("abraco").textContent = CONFIG.mensagemAbraco;
-      $("btn-abraco").textContent = "Outro abraço 🤗";
-    });
-  </script>
+    if (G.fim && !G.mostrouVitoria && !G.bilheteAtivo && !G.fila.length) {
+      G.mostrouVitoria = true;
+      setTimeout(mostrarVitoria, 500);
+    }
+  }
+
+  function pegar(it) {
+    const x = it.vis, y = it.y;
+    if (it.tipo === "nuvem") {
+      J.triste = 1.3;
+      G.tremor = 0.3;
+      G.combo = 0;
+      atualizarCombo();
+      explodir(x, y, "#9fc4ff", 12, "gota");
+      flutuar(x, y - 24, "passa já, nuvem ☁️", "#8a7f9c");
+      nota(220, 0.35, 0.06, "triangle");
+      nota(185, 0.45, 0.05, "triangle", 0.12);
+      vibrar([25, 40, 25]);
+      return;
+    }
+    if (it.tipo === "ima") {
+      G.ima = 5;
+      J.feliz = 1;
+      J.aperta = 1;
+      explodir(x, y, "#c9b6ff", 18, "brilho");
+      flutuar(x, y - 24, "presente! 🎁", "#9b74f0");
+      arpejo([659.25, 783.99, 987.77, 1318.51], 0.06, 0.4);
+      vibrar(30);
+      return;
+    }
+    G.combo++;
+    G.pegos++;
+    G.maiorCombo = Math.max(G.maiorCombo, G.combo);
+    const ganho = it.tipo === "ouro" ? 10 : 3 + Math.min(G.combo - 1, 4);
+    J.feliz = 0.7;
+    J.aperta = 1;
+    J.brilho = 1;
+    explodir(x, y, it.tipo === "ouro" ? "#ffc24a" : it.cor, it.tipo === "ouro" ? 18 : 10, it.tipo === "ouro" ? "brilho" : "coracao");
+    flutuar(x, y - 26, "+" + ganho, it.tipo === "ouro" ? "#e09a10" : "#e04d79");
+    nota(ESCALA[Math.min(G.combo - 1, ESCALA.length - 1)], 0.32, 0.08);
+    if (it.tipo === "ouro") nota(1567.98, 0.5, 0.05, "sine", 0.07);
+    vibrar(it.tipo === "ouro" ? 25 : 10);
+    atualizarCombo();
+    somar(ganho);
+  }
+
+  function somar(n) {
+    G.pontos = Math.min(100, G.pontos + n);
+    while (G.desbloq < FRASES.length - 1 && G.pontos >= (G.desbloq + 1) * 10) {
+      G.fila.push(G.desbloq);
+      G.desbloq++;
+    }
+    proximoBilhete();
+    atualizarMedidor();
+    if (G.pontos >= 100 && !G.fim) {
+      G.fim = true;
+      J.feliz = 99;
+      chuva(36);
+      arpejo([523.25, 659.25, 783.99, 1046.5, 1318.51], 0.12, 0.8);
+      vibrar([40, 60, 40, 60, 80]);
+    }
+  }
+
+  function proximoBilhete() {
+    if (G.bilheteAtivo || !G.fila.length) return;
+    const i = G.fila.shift();
+    const jogo = G;
+    jogo.bilheteAtivo = true;
+    const el = $("bilhete");
+    $("bilhete-n").textContent = "bilhetinho " + (i + 1) + " de " + FRASES.length;
+    $("bilhete-t").textContent = FRASES[i];
+    el.classList.remove("sai");
+    el.hidden = false;
+    void el.offsetWidth;
+    el.classList.add("entra");
+    arpejo([1046.5, 1318.51], 0.08, 0.6);
+    const tempo = Math.max(2300, 1300 + FRASES[i].length * 38);
+    setTimeout(() => {
+      if (G !== jogo) return;
+      el.classList.remove("entra");
+      el.classList.add("sai");
+      setTimeout(() => {
+        if (G !== jogo) return;
+        el.hidden = true;
+        el.classList.remove("sai");
+        jogo.bilheteAtivo = false;
+        proximoBilhete();
+      }, 300);
+    }, jogo.fim ? Math.min(tempo, 2000) : tempo);
+  }
+
+  function atualizarMedidor() {
+    const pct = Math.round(G.pontos);
+    $("medidor").style.width = pct + "%";
+    $("pct").textContent = pct + "%";
+  }
+  function atualizarCombo() {
+    const el = $("combo");
+    el.textContent = "combo x" + G.combo;
+    el.classList.toggle("on", G.combo >= 3);
+    el.classList.toggle("quente", G.combo >= 6);
+  }
+
+  function mostrarVitoria() {
+    $("vit-frase").textContent = FRASES[FRASES.length - 1];
+    $("vit-info").textContent = "Você pegou " + G.pegos + " coraçõezinhos · maior combo x" + G.maiorCombo;
+    $("vitoria").hidden = false;
+  }
+
+  function explodir(x, y, cor, qtd, tipo) {
+    for (let i = 0; i < qtd; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const v = 80 + Math.random() * 200;
+      G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 160, vida: 1, cor, tipo, r: 4 + Math.random() * 4 });
+    }
+  }
+  function flutuar(x, y, txt, cor) {
+    G.textos.push({ x: Math.max(50, Math.min(W - 50, x)), y, txt, cor, vida: 1 });
+  }
+
+  /* ---------- Desenho ---------- */
+  function caminhoCoracao(r) {
+    cx.beginPath();
+    cx.moveTo(0, r * 0.95);
+    cx.bezierCurveTo(-r * 1.35, r * 0.1, -r * 1.05, -r * 1.05, 0, -r * 0.45);
+    cx.bezierCurveTo(r * 1.05, -r * 1.05, r * 1.35, r * 0.1, 0, r * 0.95);
+    cx.closePath();
+  }
+  function coracao(x, y, r, cor, giro = 0) {
+    cx.save();
+    cx.translate(x, y);
+    cx.rotate(giro);
+    caminhoCoracao(r);
+    cx.fillStyle = cor;
+    cx.fill();
+    cx.beginPath();
+    cx.ellipse(-r * 0.42, -r * 0.35, r * 0.22, r * 0.13, -0.6, 0, Math.PI * 2);
+    cx.fillStyle = "rgba(255,255,255,.7)";
+    cx.fill();
+    cx.restore();
+  }
+  function estrela(x, y, r, cor) {
+    cx.save();
+    cx.translate(x, y);
+    cx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const rr = i % 2 ? r * 0.35 : r;
+      const a = (i / 8) * Math.PI * 2;
+      cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    cx.closePath();
+    cx.fillStyle = cor;
+    cx.fill();
+    cx.restore();
+  }
+  function nuvem(x, y, r, t) {
+    cx.save();
+    cx.translate(x, y);
+    cx.fillStyle = "#d9d3e3";
+    cx.beginPath();
+    cx.arc(-r * 0.55, r * 0.1, r * 0.48, 0, Math.PI * 2);
+    cx.arc(0, -r * 0.2, r * 0.62, 0, Math.PI * 2);
+    cx.arc(r * 0.58, r * 0.1, r * 0.46, 0, Math.PI * 2);
+    cx.rect(-r * 0.55, r * 0.1, r * 1.13, r * 0.48);
+    cx.fill();
+    cx.fillStyle = "#5e3550";
+    cx.beginPath();
+    cx.arc(-r * 0.25, r * 0.02, 2.4, 0, Math.PI * 2);
+    cx.arc(r * 0.25, r * 0.02, 2.4, 0, Math.PI * 2);
+    cx.fill();
+    cx.strokeStyle = "#5e3550";
+    cx.lineWidth = 2;
+    cx.lineCap = "round";
+    cx.beginPath();
+    cx.arc(0, r * 0.32, r * 0.14, Math.PI * 1.15, Math.PI * 1.85);
+    cx.stroke();
+    cx.fillStyle = "#9fc4ff";
+    const g = (t * 60) % 14;
+    cx.beginPath();
+    cx.ellipse(-r * 0.3, r * 0.75 + g, 2, 3.5, 0, 0, Math.PI * 2);
+    cx.ellipse(r * 0.3, r * 0.75 + ((g + 7) % 14), 2, 3.5, 0, 0, Math.PI * 2);
+    cx.fill();
+    cx.restore();
+  }
+  function presente(x, y, r, t) {
+    cx.save();
+    cx.translate(x, y);
+    cx.strokeStyle = "rgba(201,182,255," + (0.35 + Math.sin(t * 6) * 0.25) + ")";
+    cx.lineWidth = 3;
+    cx.beginPath();
+    cx.arc(0, 0, r * 1.45 + Math.sin(t * 6) * 3, 0, Math.PI * 2);
+    cx.stroke();
+    cx.restore();
+    coracao(x, y, r, "#b48cff", Math.sin(t * 4) * 0.15);
+    cx.save();
+    cx.translate(x, y);
+    cx.fillStyle = "#fff";
+    cx.fillRect(-2, -r * 0.6, 4, r * 1.45);
+    cx.fillRect(-r * 0.95, -2, r * 1.9, 4);
+    cx.restore();
+  }
+
+  function desenharPote() {
+    const { x, y, w, h } = J;
+    const ap = J.aperta;
+    cx.save();
+    cx.translate(x, y + h / 2);
+    cx.scale(1 + ap * 0.09, 1 - ap * 0.09);
+    cx.translate(0, -h / 2);
+    const top = -h / 2, bot = h / 2, hw = w / 2;
+
+    if (G.ima > 0) {
+      cx.strokeStyle = "rgba(201,182,255," + (0.3 + Math.sin(G.tempo * 8) * 0.2) + ")";
+      cx.lineWidth = 4;
+      cx.beginPath();
+      cx.arc(0, 0, hw + 18 + Math.sin(G.tempo * 8) * 4, 0, Math.PI * 2);
+      cx.stroke();
+    }
+
+    const corpo = () => {
+      cx.beginPath();
+      cx.moveTo(-hw * 0.84, top);
+      cx.lineTo(hw * 0.84, top);
+      cx.quadraticCurveTo(hw, top + 6, hw, top + 20);
+      cx.lineTo(hw, bot - 16);
+      cx.quadraticCurveTo(hw, bot, hw - 16, bot);
+      cx.lineTo(-hw + 16, bot);
+      cx.quadraticCurveTo(-hw, bot, -hw, bot - 16);
+      cx.lineTo(-hw, top + 20);
+      cx.quadraticCurveTo(-hw, top + 6, -hw * 0.84, top);
+      cx.closePath();
+    };
+
+    cx.shadowColor = "rgba(255,111,150,.55)";
+    cx.shadowBlur = 8 + J.brilho * 26;
+    corpo();
+    cx.fillStyle = "rgba(255,255,255,.78)";
+    cx.fill();
+    cx.shadowBlur = 0;
+
+    // amor enchendo o potinho
+    const nivel = (G.pontos / 100) * (h - 8);
+    if (nivel > 0) {
+      cx.save();
+      corpo();
+      cx.clip();
+      const sup = bot - nivel;
+      const grad = cx.createLinearGradient(0, sup, 0, bot);
+      grad.addColorStop(0, "#ff8fb0");
+      grad.addColorStop(1, "#c9b6ff");
+      cx.fillStyle = grad;
+      cx.beginPath();
+      cx.moveTo(-hw - 2, bot + 2);
+      for (let i = 0; i <= 12; i++) {
+        const px = -hw - 2 + (i / 12) * (w + 4);
+        cx.lineTo(px, sup + Math.sin(G.tempo * 4 + i * 0.9) * 2.5);
+      }
+      cx.lineTo(hw + 2, bot + 2);
+      cx.closePath();
+      cx.fill();
+      cx.restore();
+    }
+
+    corpo();
+    cx.strokeStyle = "#ffb3c8";
+    cx.lineWidth = 3;
+    cx.stroke();
+
+    // reflexo do vidro
+    cx.strokeStyle = "rgba(255,255,255,.9)";
+    cx.lineWidth = 4;
+    cx.lineCap = "round";
+    cx.beginPath();
+    cx.moveTo(-hw + 11, top + 24);
+    cx.lineTo(-hw + 11, top + 40);
+    cx.stroke();
+
+    // tampinha com laço
+    cx.fillStyle = "#ff8fb0";
+    cx.beginPath();
+    if (cx.roundRect) cx.roundRect(-hw * 0.92, top - 13, w * 0.92, 14, 7);
+    else cx.rect(-hw * 0.92, top - 13, w * 0.92, 14);
+    cx.fill();
+    coracao(0, top - 7, 7, "#fff");
+
+    // carinha
+    const fy = top + h * 0.42;
+    cx.fillStyle = "#5e3550";
+    cx.strokeStyle = "#5e3550";
+    cx.lineWidth = 3;
+    if (J.triste > 0) {
+      cx.beginPath();
+      cx.arc(-15, fy, 3.5, 0, Math.PI * 2);
+      cx.arc(15, fy, 3.5, 0, Math.PI * 2);
+      cx.fill();
+      cx.beginPath();
+      cx.arc(0, fy + 15, 7, Math.PI * 1.15, Math.PI * 1.85);
+      cx.stroke();
+      cx.fillStyle = "#9fc4ff";
+      cx.beginPath();
+      cx.ellipse(19, fy + 9 + (1.3 - J.triste) * 10, 2.5, 4, 0, 0, Math.PI * 2);
+      cx.fill();
+    } else if (J.feliz > 0) {
+      cx.beginPath();
+      cx.arc(-15, fy + 2, 5, Math.PI * 1.1, Math.PI * 1.9);
+      cx.stroke();
+      cx.beginPath();
+      cx.arc(15, fy + 2, 5, Math.PI * 1.1, Math.PI * 1.9);
+      cx.stroke();
+      cx.beginPath();
+      cx.arc(0, fy + 6, 7, 0, Math.PI);
+      cx.closePath();
+      cx.fill();
+    } else {
+      const pisca = G.tempo % 3.4 < 0.12;
+      cx.beginPath();
+      if (pisca) {
+        cx.fillRect(-19, fy - 1, 8, 2.5);
+        cx.fillRect(11, fy - 1, 8, 2.5);
+      } else {
+        cx.arc(-15, fy, 4, 0, Math.PI * 2);
+        cx.arc(15, fy, 4, 0, Math.PI * 2);
+        cx.fill();
+      }
+      cx.beginPath();
+      cx.arc(0, fy + 7, 6, 0.15 * Math.PI, 0.85 * Math.PI);
+      cx.stroke();
+    }
+    cx.fillStyle = "rgba(255,143,176,.55)";
+    cx.beginPath();
+    cx.ellipse(-27, fy + 9, 6, 3.5, 0, 0, Math.PI * 2);
+    cx.ellipse(27, fy + 9, 6, 3.5, 0, 0, Math.PI * 2);
+    cx.fill();
+
+    cx.restore();
+  }
+
+  function desenhar() {
+    cx.clearRect(0, 0, W, H);
+    cx.save();
+    if (G.tremor > 0) {
+      const k = G.tremor * 14;
+      cx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+    }
+
+    for (const it of G.itens) {
+      const x = it.vis ?? it.x;
+      if (it.tipo === "nuvem") nuvem(x, it.y, it.r, G.tempo);
+      else if (it.tipo === "ima") presente(x, it.y, it.r, G.tempo);
+      else if (it.tipo === "ouro") {
+        coracao(x, it.y, it.r, "#ffc24a", Math.sin(it.fase) * 0.2);
+        estrela(x + it.r * 0.9, it.y - it.r * 0.8, 6 + Math.sin(G.tempo * 10) * 2, "#fff3c4");
+      } else coracao(x, it.y, it.r, it.cor, Math.sin(it.fase) * 0.15);
+    }
+
+    desenharPote();
+
+    for (const p of G.parts) {
+      cx.globalAlpha = Math.max(0, p.vida);
+      if (p.tipo === "gota") {
+        cx.fillStyle = p.cor;
+        cx.beginPath();
+        cx.ellipse(p.x, p.y, 2.5, 4, 0, 0, Math.PI * 2);
+        cx.fill();
+      } else if (p.tipo === "brilho") estrela(p.x, p.y, p.r + 1, p.cor);
+      else coracao(p.x, p.y, p.r, p.cor);
+    }
+    cx.globalAlpha = 1;
+
+    cx.textAlign = "center";
+    cx.font = "700 22px Fredoka, Nunito, system-ui, sans-serif";
+    cx.lineWidth = 5;
+    cx.lineJoin = "round";
+    for (const t of G.textos) {
+      cx.globalAlpha = Math.max(0, Math.min(1, t.vida * 1.6));
+      cx.strokeStyle = "#fffdf9";
+      cx.strokeText(t.txt, t.x, t.y);
+      cx.fillStyle = t.cor;
+      cx.fillText(t.txt, t.x, t.y);
+    }
+    cx.globalAlpha = 1;
+    cx.restore();
+  }
+
+  /* =====================================================================
+     Navegação
+     ===================================================================== */
+  $("btn-comecar").addEventListener("click", () => {
+    nota(659.25, 0.4);
+    irPara("tela-jogo");
+    novoJogo();
+  });
+  $("btn-carta").addEventListener("click", () => {
+    cancelAnimationFrame(quadro);
+    irPara("tela-carta");
+    $("tela-carta").querySelector(".rolagem").scrollTop = 0;
+    arpejo([783.99, 1046.5], 0.1, 0.6);
+  });
+  $("btn-foto").addEventListener("click", () => {
+    irPara("tela-foto");
+    const p = $("polaroid");
+    p.classList.remove("revela");
+    void p.offsetWidth;
+    p.classList.add("revela");
+    $("abraco").textContent = "";
+    $("btn-abraco").textContent = "Me dá um abraço?";
+    chuva(16);
+  });
+  $("btn-abraco").addEventListener("click", () => {
+    chuva(60);
+    arpejo([523.25, 659.25, 783.99, 659.25, 1046.5], 0.16, 0.9);
+    vibrar([60, 80, 120]);
+    $("abraco").textContent = "Abraço apertado enviado. Pode cobrar pessoalmente ♡";
+    $("btn-abraco").textContent = "Outro abraço";
+  });
+  $("btn-denovo").addEventListener("click", () => {
+    irPara("tela-jogo");
+    novoJogo();
+  });
+</script>
 </body>
 </html>
