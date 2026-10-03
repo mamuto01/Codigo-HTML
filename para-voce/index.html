@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Para você</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rosa: #ff6b9d;
+      --rosa-claro: #ffd1e1;
+      --lilas: #c3a6ff;
+      --fundo1: #2b1b3d;
+      --fundo2: #4a2c5a;
+      --texto: #fff6fa;
+      --papel: #fffaf3;
+      --tinta: #4a2c3a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "Quicksand", sans-serif;
+      color: var(--texto);
+      background: radial-gradient(ellipse at top, var(--fundo2), var(--fundo1) 70%);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Estrelinhas de fundo */
+    #estrelas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .estrela {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      opacity: .6;
+      animation: piscar 3s infinite ease-in-out;
+    }
+    @keyframes piscar {
+      0%, 100% { opacity: .15; }
+      50% { opacity: .9; }
+    }
+
+    .tela {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      text-align: center;
+      z-index: 1;
+    }
+    .tela.ativa {
+      display: flex;
+      animation: aparecer .9s ease;
+    }
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    h1, .cursiva {
+      font-family: "Dancing Script", cursive;
+    }
+    h1 {
+      font-size: clamp(2.4rem, 9vw, 4rem);
+      color: var(--rosa-claro);
+      text-shadow: 0 0 24px rgba(255, 107, 157, .5);
+      margin-bottom: 12px;
+    }
+    p.sub {
+      font-size: 1.05rem;
+      max-width: 440px;
+      line-height: 1.6;
+      opacity: .9;
+      margin-bottom: 28px;
+    }
+
+    .botao {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--rosa), #e0559b);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255, 107, 157, .35);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .botao:hover { transform: translateY(-2px) scale(1.03); }
+    .botao:active { transform: scale(.97); }
+    .botao.secundario {
+      background: transparent;
+      border: 2px solid var(--rosa-claro);
+      box-shadow: none;
+    }
+
+    /* Coração pulsando na abertura */
+    .coracao-grande {
+      font-size: 5rem;
+      animation: pulsar 1.4s infinite;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 20px rgba(255, 107, 157, .6));
+    }
+    @keyframes pulsar {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.15); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.1); }
+    }
+
+    /* ===== JOGO ===== */
+    #tela-jogo {
+      padding: 0;
+      justify-content: flex-start;
+    }
+    #hud {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 520px;
+      padding: 16px 16px 0;
+    }
+    #hud .titulo {
+      font-family: "Dancing Script", cursive;
+      font-size: 1.6rem;
+      color: var(--rosa-claro);
+    }
+    #barra {
+      margin-top: 8px;
+      height: 12px;
+      background: rgba(255, 255, 255, .12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    #barra-cheia {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--lilas), var(--rosa));
+      border-radius: 999px;
+      transition: width .4s ease;
+    }
+    #contador {
+      font-size: .85rem;
+      margin-top: 6px;
+      opacity: .8;
+    }
+    #canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: none;
+    }
+    #mensagem-jogo {
+      position: absolute;
+      left: 50%;
+      top: 32%;
+      transform: translate(-50%, -50%);
+      width: min(90%, 440px);
+      font-family: "Dancing Script", cursive;
+      font-size: clamp(1.5rem, 6vw, 2.1rem);
+      color: #fff;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, .6), 0 0 20px rgba(255, 107, 157, .6);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .5s;
+      z-index: 2;
+    }
+    #mensagem-jogo.visivel { opacity: 1; }
+    #dica {
+      position: absolute;
+      bottom: 120px;
+      left: 0;
+      right: 0;
+      font-size: .9rem;
+      opacity: .7;
+      pointer-events: none;
+      z-index: 2;
+      transition: opacity 1s;
+    }
+
+    /* ===== CARTA ===== */
+    #tela-carta {
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding-top: 72px;
+      padding-bottom: 40px;
+    }
+    .carta {
+      background: var(--papel);
+      color: var(--tinta);
+      width: min(100%, 560px);
+      padding: 36px 28px;
+      border-radius: 6px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
+      text-align: left;
+      position: relative;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 31px, rgba(200, 150, 170, .25) 32px
+      );
+      line-height: 32px;
+      flex-shrink: 0;
+    }
+    .carta::before {
+      content: "💌";
+      position: absolute;
+      top: -22px;
+      right: 22px;
+      font-size: 2.6rem;
+    }
+    .carta .saudacao {
+      font-family: "Dancing Script", cursive;
+      font-size: 2rem;
+      color: #c2416f;
+      margin-bottom: 8px;
+    }
+    .carta p {
+      font-size: 1.02rem;
+      margin-bottom: 16px;
+      min-height: 1em;
+    }
+    .carta .assinatura {
+      font-family: "Dancing Script", cursive;
+      font-size: 1.7rem;
+      text-align: right;
+      color: #c2416f;
+      margin-top: 10px;
+    }
+    .cursor-digitando::after {
+      content: "|";
+      animation: piscar-cursor .7s infinite;
+      color: #c2416f;
+    }
+    @keyframes piscar-cursor { 50% { opacity: 0; } }
+    #acoes-carta {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .8s;
+      pointer-events: none;
+    }
+    #acoes-carta.visivel { opacity: 1; pointer-events: auto; }
+
+    /* ===== MOTIVOS (cartas que viram) ===== */
+    #tela-motivos {
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+    #grade-motivos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+      width: min(100%, 620px);
+      margin: 10px 0 28px;
+      flex-shrink: 0;
+    }
+    .motivo {
+      perspective: 800px;
+      height: 170px;
+      cursor: pointer;
+    }
+    .motivo-interno {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform .7s;
+      transform-style: preserve-3d;
+    }
+    .motivo.virado .motivo-interno { transform: rotateY(180deg); }
+    .motivo-frente, .motivo-verso {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .motivo-frente {
+      background: linear-gradient(135deg, var(--rosa), var(--lilas));
+      font-size: 2.4rem;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .25);
+    }
+    .motivo-frente small {
+      font-size: .8rem;
+      font-weight: 700;
+      opacity: .9;
+    }
+    .motivo-verso {
+      background: var(--papel);
+      color: var(--tinta);
+      transform: rotateY(180deg);
+      font-size: .95rem;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+    #fim-motivos {
+      opacity: 0;
+      transition: opacity .8s;
+      pointer-events: none;
+    }
+    #fim-motivos.visivel { opacity: 1; pointer-events: auto; }
+
+    /* ===== FINAL ===== */
+    #tela-final .promessa {
+      max-width: 460px;
+      line-height: 1.7;
+      font-size: 1.08rem;
+      margin: 8px 0 28px;
+      opacity: .95;
+    }
+    #abraco {
+      font-family: "Dancing Script", cursive;
+      font-size: 2rem;
+      color: var(--rosa-claro);
+      margin-top: 24px;
+      min-height: 2.6rem;
+    }
+
+    .coracao-flutuante {
+      position: fixed;
+      pointer-events: none;
+      z-index: 50;
+      animation: subir linear forwards;
+    }
+    @keyframes subir {
+      from { transform: translateY(0) rotate(0); opacity: 1; }
+      to { transform: translateY(-110vh) rotate(25deg); opacity: 0; }
+    }
+
+    #musica {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 60;
+      background: rgba(255, 255, 255, .12);
+      border: none;
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="estrelas"></div>
+  <button id="musica" title="Som">🔈</button>
+
+  <!-- ===== TELA 1: ABERTURA ===== -->
+  <section class="tela ativa" id="tela-inicio">
+    <div class="coracao-grande">💗</div>
+    <h1 id="titulo-inicio">Para você</h1>
+    <p class="sub" id="sub-inicio"></p>
+    <button class="botao" id="btn-comecar">Abrir com carinho</button>
+  </section>
+
+  <!-- ===== TELA 2: JOGO ===== -->
+  <section class="tela" id="tela-jogo">
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+      <div class="titulo">Pegue os coraçõezinhos 💕</div>
+      <div id="barra"><div id="barra-cheia"></div></div>
+      <div id="contador">0 / 10</div>
+    </div>
+    <div id="mensagem-jogo"></div>
+    <div id="dica">Arraste o dedo (ou o mouse) para mover o potinho.<br>As nuvens cinzas não fazem mal — elas só passam. ☁️</div>
+  </section>
+
+  <!-- ===== TELA 3: CARTA ===== -->
+  <section class="tela" id="tela-carta">
+    <div class="carta">
+      <div class="saudacao" id="carta-saudacao"></div>
+      <div id="carta-corpo"></div>
+      <div class="assinatura" id="carta-assinatura"></div>
+    </div>
+    <div id="acoes-carta">
+      <button class="botao" id="btn-motivos">Tem mais uma coisa…</button>
+    </div>
+  </section>
+
+  <!-- ===== TELA 4: MOTIVOS ===== -->
+  <section class="tela" id="tela-motivos">
+    <h1>Motivos</h1>
+    <p class="sub">Toque em cada cartinha. Cada uma guarda um motivo pelo qual eu te amo.</p>
+    <div id="grade-motivos"></div>
+    <div id="fim-motivos">
+      <button class="botao" id="btn-final">Só mais uma ❤️</button>
+    </div>
+  </section>
+
+  <!-- ===== TELA 5: FINAL ===== -->
+  <section class="tela" id="tela-final">
+    <div class="coracao-grande">💖</div>
+    <h1 id="final-titulo">Eu te amo</h1>
+    <p class="promessa" id="final-texto"></p>
+    <button class="botao" id="btn-abraco">Me dá um abraço?</button>
+    <div id="abraco"></div>
+  </section>
+
+  <script>
+    /* =====================================================================
+       PERSONALIZE AQUI ✏️
+       Troque os textos abaixo pelas suas próprias palavras.
+       Quanto mais com a sua cara, mais especial fica.
+       ===================================================================== */
+    const CONFIG = {
+      nomeDela: "Meu amor",          // o nome ou apelido dela
+      seuNome: "Seu amor",           // como você quer assinar
+
+      textoAbertura:
+        "Eu fiz uma coisinha pra você. É simples, mas foi feita com todo o carinho que às vezes eu não consigo mostrar.",
+
+      // Frases que aparecem quando ela pega cada coração no jogo (10 frases)
+      frasesJogo: [
+        "Obrigado por ficar.",
+        "Você é o meu lugar seguro.",
+        "Seu abraço me acalma.",
+        "Mesmo calado, eu penso em você.",
+        "Você deixa os dias mais leves.",
+        "Obrigado pela paciência.",
+        "Seu sorriso me salva.",
+        "Eu te escolho todos os dias.",
+        "Você não está sozinha nisso.",
+        "Meu coração é seu. ❤️"
+      ],
+
+      // A carta. Cada item vira um parágrafo.
+      carta: [
+        "Eu sei que nem sempre é fácil estar ao meu lado agora.",
+        "A depressão às vezes rouba de mim a energia, a vontade de falar, de sair, de demonstrar. Às vezes eu fico quieto, distante, e sei que isso pode fazer você se sentir insegura. Mas quero que você saiba de uma coisa, com toda a certeza que eu tenho: o meu silêncio nunca é falta de amor.",
+        "Nos dias cinzas, você é a parte colorida. Quando eu não consigo dizer, eu ainda sinto. Quando eu não consigo mostrar, eu ainda estou aqui, te amando do jeito que dá.",
+        "Obrigado pela sua paciência, pelo seu cuidado, por não desistir de mim nos dias em que nem eu mesmo consigo me entender. Isso significa mais do que qualquer palavra consegue explicar.",
+        "Eu estou me cuidando e vou continuar tentando, por mim e por nós. E enquanto isso, quero que você guarde isto: você é amada. Muito. Todos os dias. Mesmo nos dias em que eu não consigo dizer."
+      ],
+
+      // Motivos (cartinhas que viram). Pode colocar quantos quiser.
+      motivos: [
+        "Seu jeito de cuidar de mim sem eu precisar pedir.",
+        "Sua risada, que conserta qualquer dia ruim.",
+        "Você me enxerga mesmo quando eu me escondo.",
+        "Sua paciência, que é maior do que eu mereço.",
+        "O jeito que você fala das coisas que ama.",
+        "Porque com você eu me sinto em casa."
+      ],
+
+      tituloFinal: "Eu te amo",
+      textoFinal:
+        "Não importa quantas nuvens passem, você continua sendo o meu céu. Quando eu estiver quieto, lembra deste lugarzinho aqui. Ele vai continuar dizendo por mim: eu te amo, eu sou grato por você, e eu estou aqui.",
+      mensagemAbraco: "Abraço apertado enviado 🤍 Pode cobrar pessoalmente."
+    };
+    /* ===================================================================== */
+
+    const $ = (id) => document.getElementById(id);
+
+    // ---------- Fundo de estrelas ----------
+    (function criarEstrelas() {
+      const box = $("estrelas");
+      for (let i = 0; i < 70; i++) {
+        const s = document.createElement("div");
+        s.className = "estrela";
+        s.style.left = Math.random() * 100 + "%";
+        s.style.top = Math.random() * 100 + "%";
+        s.style.animationDelay = Math.random() * 3 + "s";
+        const tam = Math.random() < 0.15 ? 3 : 2;
+        s.style.width = s.style.height = tam + "px";
+        box.appendChild(s);
+      }
+    })();
+
+    // ---------- Navegação entre telas ----------
+    function irPara(id) {
+      document.querySelectorAll(".tela").forEach((t) => t.classList.remove("ativa"));
+      $(id).classList.add("ativa");
+    }
+
+    // ---------- Corações flutuantes ----------
+    function chuvaDeCoracoes(qtd = 30) {
+      const emojis = ["💗", "💖", "💕", "❤️", "🤍", "💜"];
+      for (let i = 0; i < qtd; i++) {
+        setTimeout(() => {
+          const c = document.createElement("div");
+          c.className = "coracao-flutuante";
+          c.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          c.style.left = Math.random() * 100 + "vw";
+          c.style.bottom = "-40px";
+          c.style.fontSize = 16 + Math.random() * 26 + "px";
+          c.style.animationDuration = 3 + Math.random() * 3 + "s";
+          document.body.appendChild(c);
+          setTimeout(() => c.remove(), 6500);
+        }, i * 90);
+      }
+    }
+
+    // ---------- Som (sininhos suaves gerados no navegador) ----------
+    let audioCtx = null;
+    let somLigado = true;
+    function tocarNota(freq, dur = 0.5, vol = 0.12) {
+      if (!somLigado) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "sine";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        o.connect(g).connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + dur);
+      } catch (e) { /* sem áudio, tudo bem */ }
+    }
+    const escala = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+    $("musica").textContent = "🔊";
+    $("musica").addEventListener("click", () => {
+      somLigado = !somLigado;
+      $("musica").textContent = somLigado ? "🔊" : "🔈";
+    });
+
+    // ---------- Tela inicial ----------
+    $("titulo-inicio").textContent = "Para " + CONFIG.nomeDela;
+    $("sub-inicio").textContent = CONFIG.textoAbertura;
+    $("btn-comecar").addEventListener("click", () => {
+      tocarNota(659.25, 0.6);
+      irPara("tela-jogo");
+      iniciarJogo();
+    });
+
+    // =====================================================================
+    // JOGO: pegar corações com o potinho
+    // =====================================================================
+    const canvas = $("canvas");
+    const ctx = canvas.getContext("2d");
+    const META = CONFIG.frasesJogo.length;
+    let W, H, dpr;
+    let pote, itens, pegos, rodando, ultimoSpawn, tempoMensagem, particulas;
+
+    function redimensionar() {
+      dpr = window.devicePixelRatio || 1;
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (pote) pote.y = H - 70;
+    }
+    window.addEventListener("resize", redimensionar);
+
+    function moverPote(clientX) {
+      if (!pote) return;
+      const r = canvas.getBoundingClientRect();
+      pote.alvoX = Math.max(pote.w / 2, Math.min(W - pote.w / 2, clientX - r.left));
+      $("dica").style.opacity = 0;
+    }
+    canvas.addEventListener("mousemove", (e) => moverPote(e.clientX));
+    canvas.addEventListener("touchstart", (e) => moverPote(e.touches[0].clientX), { passive: true });
+    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); moverPote(e.touches[0].clientX); }, { passive: false });
+
+    function iniciarJogo() {
+      redimensionar();
+      pote = { x: W / 2, alvoX: W / 2, y: H - 70, w: 86, h: 64, brilho: 0 };
+      itens = [];
+      particulas = [];
+      pegos = 0;
+      ultimoSpawn = 0;
+      tempoMensagem = null;
+      rodando = true;
+      atualizarHud();
+      requestAnimationFrame(loop);
+    }
+
+    function atualizarHud() {
+      $("barra-cheia").style.width = (pegos / META) * 100 + "%";
+      $("contador").textContent = pegos + " / " + META;
+    }
+
+    function criarItem() {
+      const nuvem = Math.random() < 0.28 && pegos > 0;
+      itens.push({
+        tipo: nuvem ? "nuvem" : "coracao",
+        x: 30 + Math.random() * (W - 60),
+        y: -30,
+        vy: nuvem ? 1.1 + Math.random() * 0.6 : 1.6 + Math.random() * 1.2 + pegos * 0.06,
+        balanco: Math.random() * Math.PI * 2,
+        tam: nuvem ? 26 : 18 + Math.random() * 6,
+        cor: ["#ff6b9d", "#ff8fb3", "#e0559b", "#c3a6ff"][Math.floor(Math.random() * 4)]
+      });
+    }
+
+    function desenharCoracao(x, y, s, cor) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(s / 16, s / 16);
+      ctx.beginPath();
+      ctx.moveTo(0, 5);
+      ctx.bezierCurveTo(-1, 3, -16, -3, -8, -11);
+      ctx.bezierCurveTo(-3, -15, 0, -10, 0, -8);
+      ctx.bezierCurveTo(0, -10, 3, -15, 8, -11);
+      ctx.bezierCurveTo(16, -3, 1, 3, 0, 5);
+      ctx.closePath();
+      ctx.shadowColor = cor;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = cor;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function desenharNuvem(x, y, s) {
+      ctx.save();
+      ctx.fillStyle = "rgba(170, 170, 190, .55)";
+      ctx.beginPath();
+      ctx.arc(x - s * 0.5, y, s * 0.45, 0, Math.PI * 2);
+      ctx.arc(x, y - s * 0.25, s * 0.6, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.55, y, s * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function desenharPote() {
+      const { x, y, w, h } = pote;
+      ctx.save();
+      // brilho quando pega um coração
+      if (pote.brilho > 0) {
+        ctx.shadowColor = "#ff6b9d";
+        ctx.shadowBlur = 30 * pote.brilho;
+      }
+      // corpo do pote (vidro)
+      ctx.fillStyle = "rgba(255, 255, 255, .14)";
+      ctx.strokeStyle = "rgba(255, 220, 235, .85)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, y - h / 2);
+      ctx.lineTo(x - w / 2 + 6, y + h / 2 - 8);
+      ctx.quadraticCurveTo(x - w / 2 + 8, y + h / 2, x - w / 2 + 18, y + h / 2);
+      ctx.lineTo(x + w / 2 - 18, y + h / 2);
+      ctx.quadraticCurveTo(x + w / 2 - 8, y + h / 2, x + w / 2 - 6, y + h / 2 - 8);
+      ctx.lineTo(x + w / 2, y - h / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // "líquido" de amor enchendo o pote
+      const nivel = (pegos / META) * (h - 10);
+      if (nivel > 0) {
+        ctx.save();
+        ctx.clip();
+        const grad = ctx.createLinearGradient(0, y + h / 2 - nivel, 0, y + h / 2);
+        grad.addColorStop(0, "rgba(255, 107, 157, .9)");
+        grad.addColorStop(1, "rgba(195, 166, 255, .9)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(x - w / 2, y + h / 2 - nivel, w, nivel);
+        ctx.restore();
+      }
+
+      // borda/tampa
+      ctx.fillStyle = "rgba(255, 209, 225, .9)";
+      ctx.fillRect(x - w / 2 - 4, y - h / 2 - 6, w + 8, 7);
+      // laço
+      desenharCoracao(x, y + 4, 12, "#fff");
+      ctx.restore();
+    }
+
+    function soltarParticulas(x, y, cor) {
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const v = 1 + Math.random() * 3;
+        particulas.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.5, vida: 1, cor });
+      }
+    }
+
+    function mostrarMensagem(texto) {
+      const el = $("mensagem-jogo");
+      el.textContent = texto;
+      el.classList.add("visivel");
+      clearTimeout(tempoMensagem);
+      tempoMensagem = setTimeout(() => el.classList.remove("visivel"), 2200);
+    }
+
+    function loop(t) {
+      if (!rodando) return;
+      ctx.clearRect(0, 0, W, H);
+
+      // criar novos itens
+      const intervalo = Math.max(520, 950 - pegos * 30);
+      if (t - ultimoSpawn > intervalo) {
+        criarItem();
+        ultimoSpawn = t;
+      }
+
+      // pote segue o dedo suavemente
+      pote.x += (pote.alvoX - pote.x) * 0.25;
+      pote.brilho = Math.max(0, pote.brilho - 0.03);
+
+      // atualizar itens
+      for (let i = itens.length - 1; i >= 0; i--) {
+        const it = itens[i];
+        it.y += it.vy;
+        it.balanco += 0.04;
+        const xv = it.x + Math.sin(it.balanco) * 12;
+
+        if (it.tipo === "coracao") desenharCoracao(xv, it.y, it.tam, it.cor);
+        else desenharNuvem(xv, it.y, it.tam);
+
+        // colisão com a boca do pote
+        const dentroX = Math.abs(xv - pote.x) < pote.w / 2 + 6;
+        const dentroY = it.y > pote.y - pote.h / 2 - 10 && it.y < pote.y + 6;
+        if (dentroX && dentroY) {
+          if (it.tipo === "coracao") {
+            pegos++;
+            pote.brilho = 1;
+            soltarParticulas(xv, it.y, it.cor);
+            tocarNota(escala[pegos % escala.length], 0.7);
+            mostrarMensagem(CONFIG.frasesJogo[pegos - 1]);
+            atualizarHud();
+            if (pegos >= META) {
+              terminarJogo();
+            }
+          } else {
+            // nuvem: nada de punição, ela só se desfaz
+            soltarParticulas(xv, it.y, "rgba(200,200,215,.8)");
+            tocarNota(220, 0.4, 0.05);
+          }
+          itens.splice(i, 1);
+          continue;
+        }
+        if (it.y > H + 40) itens.splice(i, 1);
+      }
+
+      // partículas
+      for (let i = particulas.length - 1; i >= 0; i--) {
+        const p = particulas[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.vida -= 0.025;
+        if (p.vida <= 0) { particulas.splice(i, 1); continue; }
+        ctx.globalAlpha = p.vida;
+        desenharCoracao(p.x, p.y, 6, p.cor);
+        ctx.globalAlpha = 1;
+      }
+
+      desenharPote();
+      requestAnimationFrame(loop);
+    }
+
+    function terminarJogo() {
+      rodando = false;
+      chuvaDeCoracoes(40);
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => setTimeout(() => tocarNota(f, 0.9), i * 160));
+      setTimeout(() => {
+        $("mensagem-jogo").classList.remove("visivel");
+        irPara("tela-carta");
+        escreverCarta();
+      }, 2800);
+    }
+
+    // =====================================================================
+    // CARTA com efeito de máquina de escrever
+    // =====================================================================
+    async function escreverCarta() {
+      $("carta-saudacao").textContent = CONFIG.nomeDela + ",";
+      const corpo = $("carta-corpo");
+      corpo.innerHTML = "";
+      let pular = false;
+      const pularTudo = () => { pular = true; };
+      $("tela-carta").addEventListener("click", pularTudo, { once: true });
+
+      for (const paragrafo of CONFIG.carta) {
+        const p = document.createElement("p");
+        p.classList.add("cursor-digitando");
+        corpo.appendChild(p);
+        for (let i = 0; i < paragrafo.length; i++) {
+          if (pular) { p.textContent = paragrafo; break; }
+          p.textContent += paragrafo[i];
+          await esperar(paragrafo[i] === "." || paragrafo[i] === "," ? 180 : 32);
+        }
+        p.classList.remove("cursor-digitando");
+        if (!pular) await esperar(500);
+      }
+      $("carta-assinatura").textContent = "Com amor, " + CONFIG.seuNome;
+      $("acoes-carta").classList.add("visivel");
+    }
+    const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    $("btn-motivos").addEventListener("click", (e) => {
+      e.stopPropagation();
+      irPara("tela-motivos");
+      montarMotivos();
+    });
+
+    // =====================================================================
+    // MOTIVOS
+    // =====================================================================
+    function montarMotivos() {
+      const grade = $("grade-motivos");
+      grade.innerHTML = "";
+      let virados = 0;
+      const icones = ["💌", "🌷", "✨", "🌙", "🦋", "🌻", "🍓", "🎀"];
+      CONFIG.motivos.forEach((texto, i) => {
+        const card = document.createElement("div");
+        card.className = "motivo";
+        card.innerHTML = `
+          <div class="motivo-interno">
+            <div class="motivo-frente">${icones[i % icones.length]}<small>Motivo nº ${i + 1}</small></div>
+            <div class="motivo-verso"></div>
+          </div>`;
+        card.querySelector(".motivo-verso").textContent = texto;
+        card.addEventListener("click", () => {
+          if (card.classList.contains("virado")) return;
+          card.classList.add("virado");
+          tocarNota(escala[i % escala.length], 0.6);
+          virados++;
+          if (virados === CONFIG.motivos.length) {
+            setTimeout(() => $("fim-motivos").classList.add("visivel"), 600);
+          }
+        });
+        grade.appendChild(card);
+      });
+    }
+
+    $("btn-final").addEventListener("click", () => {
+      irPara("tela-final");
+      $("final-titulo").textContent = CONFIG.tituloFinal;
+      $("final-texto").textContent = CONFIG.textoFinal;
+      chuvaDeCoracoes(25);
+    });
+
+    // =====================================================================
+    // FINAL
+    // =====================================================================
+    $("btn-abraco").addEventListener("click", () => {
+      chuvaDeCoracoes(60);
+      [523.25, 659.25, 783.99, 659.25, 1046.5].forEach((f, i) => setTimeout(() => tocarNota(f, 1), i * 200));
+      $("abraco").textContent = CONFIG.mensagemAbraco;
+      $("btn-abraco").textContent = "Outro abraço 🤗";
+    });
+  </script>
+</body>
+</html>
