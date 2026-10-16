@@ -1,199 +1,224 @@
 /**
- * Amigo Secreto — backend em Google Apps Script usando a planilha como banco de dados.
+ * Amigo Secreto — projeto Google Apps Script.
  *
- * Configuração (detalhes no README):
- *  1. Crie uma planilha Google e abra Extensões → Apps Script.
- *  2. Cole este arquivo, salve e execute a função `configurar` uma vez.
- *  3. Em Configurações do projeto → Propriedades do script, crie ORGANIZER_KEY
- *     com uma chave de pelo menos 12 caracteres.
- *  4. Implantar → Nova implantação → App da Web, executar como "Eu",
- *     acesso "Qualquer pessoa". Copie a URL /exec para o app.js.
+ * O site é servido pelo próprio Apps Script (App da Web) e os dados ficam
+ * numa planilha Google. Arquivos do projeto:
+ *   Codigo.gs     página e funções chamadas pelo site
+ *   Planilha.gs   leitura e gravação na planilha
+ *   Seguranca.gs  sorteio, códigos, hash e cifra
+ *   Index.html, Estilos.html, Script.html  interface
+ *
+ * Funções terminadas em "_" são privadas: o site não consegue chamá-las.
  */
 
-var ABA_SORTEIO = "Sorteio";
-var ABA_PARTICIPANTES = "Participantes";
-var CABECALHO_PARTICIPANTES = ["nome", "nome_normalizado", "salt", "pin_hash", "amigo", "tentativas_erradas", "criado_em"];
 var MIN_PARTICIPANTES = 3;
 var MAX_PARTICIPANTES = 10;
-var MAX_TENTATIVAS = 10;
-
-// Colunas (base 0) da aba Participantes.
-var COL = { nome: 0, norm: 1, salt: 2, hash: 3, amigo: 4, tentativas: 5 };
-
-function configurar() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sorteio = ss.getSheetByName(ABA_SORTEIO) || ss.insertSheet(ABA_SORTEIO);
-  if (sorteio.getLastRow() === 0) sorteio.appendRow(["criado_em"]);
-  var participantes = ss.getSheetByName(ABA_PARTICIPANTES) || ss.insertSheet(ABA_PARTICIPANTES);
-  if (participantes.getLastRow() === 0) participantes.appendRow(CABECALHO_PARTICIPANTES);
-  return "Planilha pronta.";
-}
+var MAX_TENTATIVAS = 10;     // códigos errados por nome antes de bloquear
+var MAX_FALHAS_CHAVE = 20;   // chaves de organizador erradas a cada 15 minutos
 
 function doGet() {
-  return responder({ ok: true, servico: "amigo-secreto" });
+  return HtmlService.createTemplateFromFile("Index")
+    .evaluate()
+    .setTitle("Amigo Secreto")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(15000);
-  } catch (_) {
-    return responder({ error: "O serviço está ocupado. Tente de novo em alguns segundos." });
-  }
-  try {
-    var body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-    if (body.action === "create") return responder(criarSorteio(body));
-    if (body.action === "reveal") return responder(revelar(body));
-    return responder({ error: "Ação desconhecida." });
-  } catch (err) {
-    if (err && err.usuario) return responder({ error: err.message });
-    console.error(err);
-    return responder({ error: "Ocorreu um erro inesperado. Tente novamente." });
-  } finally {
-    lock.releaseLock();
-  }
+function incluir_(arquivo) {
+  return HtmlService.createHtmlOutputFromFile(arquivo).getContent();
 }
 
-function criarSorteio(body) {
-  var chaveCorreta = PropertiesService.getScriptProperties().getProperty("ORGANIZER_KEY") || "";
-  if (chaveCorreta.length < 12) {
-    throw erroUsuario("A chave do organizador ainda não foi configurada no Apps Script (ORGANIZER_KEY).");
-  }
-  if (!igualSeguro(String(body.organizer_key || ""), chaveCorreta)) {
-    throw erroUsuario("Chave do organizador incorreta.");
-  }
-
-  var nomes = Array.isArray(body.names) ? body.names.map(function (n) { return String(n || "").trim().replace(/\s+/g, " "); }) : [];
-  if (nomes.length < MIN_PARTICIPANTES || nomes.length > MAX_PARTICIPANTES) {
-    throw erroUsuario("O sorteio precisa ter de " + MIN_PARTICIPANTES + " a " + MAX_PARTICIPANTES + " participantes.");
-  }
-  if (nomes.some(function (n) { return !n || n.length > 80; })) {
-    throw erroUsuario("Confira os nomes: eles não podem estar vazios nem ter mais de 80 caracteres.");
-  }
-  // Evita que a planilha interprete um nome como fórmula.
-  if (nomes.some(function (n) { return /^[=+\-@]/.test(n); })) {
-    throw erroUsuario("Os nomes não podem começar com =, +, - ou @.");
-  }
-  var normalizados = nomes.map(normalizar);
-  if (new Set(normalizados).size !== nomes.length) {
-    throw erroUsuario("Os nomes precisam ser únicos (acentos e maiúsculas não contam como diferença).");
-  }
-
-  configurar();
+/**
+ * Execute uma vez pelo editor (botão Executar). Cria a planilha de dados,
+ * a chave do organizador e o segredo interno, e mostra tudo no registro.
+ */
+function configurar() {
+  var props = PropertiesService.getScriptProperties();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var abaSorteio = ss.getSheetByName(ABA_SORTEIO);
-  if (abaSorteio.getLastRow() > 1) {
-    throw erroUsuario("Já existe um sorteio criado. Para fazer outro, apague as linhas das abas Sorteio e Participantes (mantendo o cabeçalho).");
+  if (!ss) {
+    var id = props.getProperty("SPREADSHEET_ID");
+    ss = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.create("Amigo Secreto — dados");
+    props.setProperty("SPREADSHEET_ID", ss.getId());
   }
+  abaParticipantes_();
+  if (!props.getProperty("SEGREDO_INTERNO")) props.setProperty("SEGREDO_INTERNO", gerarChave_(40));
+  if (!props.getProperty("ORGANIZER_KEY")) props.setProperty("ORGANIZER_KEY", gerarChave_(16));
 
-  // O sorteio acontece aqui no servidor: o navegador recebe só os códigos.
-  var amigos = sortearSemRepetir(nomes);
-  var agora = new Date();
-  var codigos = [];
-  var linhas = nomes.map(function (nome, i) {
-    var pin = gerarPin();
-    var salt = Utilities.getUuid();
-    codigos.push({ name: nome, pin: pin });
-    return [nome, normalizados[i], salt, sha256(salt + pin), amigos[i], 0, agora];
+  console.log("Planilha de dados: " + ss.getUrl());
+  console.log("Chave do organizador: " + props.getProperty("ORGANIZER_KEY"));
+  console.log("Pronto! Agora publique em Implantar → Nova implantação → App da Web.");
+}
+
+// ---------- funções chamadas pelo site ----------
+
+function revelarAmigo(nome, pin) {
+  return executar_(function () {
+    nome = String(nome || "");
+    pin = String(pin || "").trim();
+    if (!nome.trim() || !pin) throw erroUsuario_("Preencha seu nome e seu código pessoal.");
+
+    var todos = lerParticipantes_();
+    if (!todos.length) throw erroUsuario_("O sorteio ainda não foi feito. Aguarde o organizador.");
+    var alvo = normalizarNome_(nome);
+    var p = todos.filter(function (x) { return x.norm === alvo; })[0];
+    var incorreto = "Nome ou código incorreto. Confira e tente novamente.";
+    if (!p) throw erroUsuario_(incorreto);
+    if (p.tentativas >= MAX_TENTATIVAS) {
+      throw erroUsuario_("Muitas tentativas erradas para este nome. Peça ao organizador para liberar seu acesso.");
+    }
+    if (!igualSeguro_(sha256Hex_(p.salt + pin), p.hash)) {
+      atualizarParticipante_(p, { tentativas: p.tentativas + 1 });
+      throw erroUsuario_(incorreto);
+    }
+    if (!p.revelado) atualizarParticipante_(p, { revelado: agora_() });
+    return { nome: p.nome, amigo: decifrar_(p.amigo, p.salt) };
   });
-
-  var abaParticipantes = ss.getSheetByName(ABA_PARTICIPANTES);
-  var intervalo = abaParticipantes.getRange(2, 1, linhas.length, CABECALHO_PARTICIPANTES.length);
-  intervalo.setNumberFormat("@"); // guarda tudo como texto (ex.: nomes só com números)
-  intervalo.setValues(linhas);
-  abaSorteio.appendRow([agora]);
-  return { ok: true, codes: codigos };
 }
 
-function revelar(body) {
-  var nome = String(body.name || "");
-  var pin = String(body.pin || "").trim();
-  var incorreto = "Nome ou código incorreto. Confira os dados e tente novamente.";
-  if (!nome.trim() || !pin) throw erroUsuario("Informe o nome e o código pessoal.");
+function entrarOrganizador(chave) {
+  return executar_(function () {
+    exigirChave_(chave);
+    return { situacao: situacao_() };
+  });
+}
 
-  var aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ABA_PARTICIPANTES);
-  if (!aba || aba.getLastRow() < 2) throw erroUsuario("O sorteio ainda não foi criado.");
-  var dados = aba.getRange(2, 1, aba.getLastRow() - 1, CABECALHO_PARTICIPANTES.length).getValues();
-
-  var alvo = normalizar(nome);
-  for (var i = 0; i < dados.length; i++) {
-    var linha = dados[i];
-    if (String(linha[COL.norm]) !== alvo) continue;
-
-    var tentativas = Number(linha[COL.tentativas]) || 0;
-    if (tentativas >= MAX_TENTATIVAS) {
-      throw erroUsuario("Muitas tentativas erradas para este nome. Peça ao organizador para liberar o acesso.");
+function criarSorteio(chave, nomes) {
+  return executar_(function () {
+    exigirChave_(chave);
+    var lista = validarNomes_(nomes);
+    if (lerParticipantes_().length) {
+      throw erroUsuario_("Já existe um sorteio. Para fazer outro, apague o atual primeiro.");
     }
-    if (!igualSeguro(sha256(String(linha[COL.salt]) + pin), String(linha[COL.hash]))) {
-      aba.getRange(i + 2, COL.tentativas + 1).setValue(tentativas + 1);
-      throw erroUsuario(incorreto);
-    }
-    return { assigned_name: String(linha[COL.amigo]) };
+
+    // O sorteio acontece aqui no servidor: o site recebe só os códigos.
+    var amigos = sortearSemRepetir_(lista);
+    var criado = agora_();
+    var codigos = [];
+    var registros = lista.map(function (nome, i) {
+      var pin = gerarPin_();
+      var salt = gerarSalt_();
+      codigos.push({ nome: nome, pin: pin });
+      return {
+        nome: nome,
+        norm: normalizarNome_(nome),
+        salt: salt,
+        hash: sha256Hex_(salt + pin),
+        amigo: cifrar_(amigos[i], salt),
+        tentativas: 0,
+        revelado: "",
+        criado: criado,
+      };
+    });
+    gravarParticipantes_(registros);
+    return { codigos: codigos, situacao: situacao_() };
+  });
+}
+
+function desbloquearParticipante(chave, nome) {
+  return executar_(function () {
+    exigirChave_(chave);
+    atualizarParticipante_(participanteDoSorteio_(nome), { tentativas: 0 });
+    return { situacao: situacao_() };
+  });
+}
+
+/** Para quem perdeu o código: troca o código e mantém o mesmo amigo secreto. */
+function gerarNovoCodigo(chave, nome) {
+  return executar_(function () {
+    exigirChave_(chave);
+    var p = participanteDoSorteio_(nome);
+    var amigo = decifrar_(p.amigo, p.salt);
+    var pin = gerarPin_();
+    var salt = gerarSalt_();
+    atualizarParticipante_(p, { salt: salt, hash: sha256Hex_(salt + pin), amigo: cifrar_(amigo, salt), tentativas: 0 });
+    return { codigos: [{ nome: p.nome, pin: pin }], situacao: situacao_() };
+  });
+}
+
+function apagarSorteio(chave) {
+  return executar_(function () {
+    exigirChave_(chave);
+    apagarParticipantes_();
+    return { situacao: situacao_() };
+  });
+}
+
+// ---------- regras internas ----------
+
+/** Executa uma ação com trava (uma por vez) e esconde erros técnicos do site. */
+function executar_(acao) {
+  var trava = LockService.getScriptLock();
+  if (!trava.tryLock(15000)) throw new Error("O sistema está ocupado. Tente de novo em alguns segundos.");
+  try {
+    return acao();
+  } catch (e) {
+    if (e && e.usuario) throw e;
+    console.error(e);
+    throw new Error("Ocorreu um erro inesperado. Tente novamente.");
+  } finally {
+    trava.releaseLock();
   }
-  throw erroUsuario(incorreto);
 }
 
-// ---------- utilidades ----------
-
-function responder(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function erroUsuario(msg) {
-  var e = new Error(msg);
+function erroUsuario_(mensagem) {
+  var e = new Error(mensagem);
   e.usuario = true;
   return e;
 }
 
-// Ignora maiúsculas, acentos e espaços repetidos: "  JOÃO  silva" == "joao silva".
-function normalizar(s) {
-  return String(s).trim().replace(/\s+/g, " ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
-function sha256(texto) {
-  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8);
-  return bytes.map(function (b) { return ((b + 256) % 256).toString(16).padStart(2, "0"); }).join("");
-}
-
-function igualSeguro(a, b) {
-  if (a.length !== b.length) return false;
-  var diff = 0;
-  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
-// 32 bits aleatórios a partir de um UUID v4 (gerado com SecureRandom pelo Google).
-function aleatorio32() {
-  return parseInt(Utilities.getUuid().replace(/-/g, "").slice(0, 8), 16);
-}
-
-// Inteiro uniforme em [0, n), sem viés de módulo.
-function aleatorioAte(n) {
-  var max = 0x100000000;
-  var limite = max - (max % n);
-  var x;
-  do { x = aleatorio32(); } while (x >= limite);
-  return x % n;
-}
-
-function gerarPin() {
-  return String(100000 + aleatorioAte(900000));
-}
-
-function embaralhar(lista) {
-  var a = lista.slice();
-  for (var i = a.length - 1; i > 0; i--) {
-    var j = aleatorioAte(i + 1);
-    var t = a[i]; a[i] = a[j]; a[j] = t;
+function exigirChave_(chave) {
+  var cache = CacheService.getScriptCache();
+  var falhas = Number(cache.get("falhas_chave")) || 0;
+  if (falhas >= MAX_FALHAS_CHAVE) {
+    throw erroUsuario_("Muitas tentativas com a chave errada. Aguarde 15 minutos e tente de novo.");
   }
-  return a;
+  var correta = PropertiesService.getScriptProperties().getProperty("ORGANIZER_KEY") || "";
+  if (correta.length < 12) {
+    throw erroUsuario_("A chave do organizador não está configurada. Execute a função configurar no Apps Script.");
+  }
+  // Compara os hashes para o tempo da comparação não depender do tamanho da chave digitada.
+  if (!igualSeguro_(sha256Hex_(String(chave || "")), sha256Hex_(correta))) {
+    cache.put("falhas_chave", String(falhas + 1), 15 * 60);
+    throw erroUsuario_("Chave do organizador incorreta.");
+  }
 }
 
-// Embaralha até ninguém tirar a si mesmo (uniforme entre os sorteios válidos).
-function sortearSemRepetir(nomes) {
-  for (var tentativa = 0; tentativa < 10000; tentativa++) {
-    var r = embaralhar(nomes);
-    if (nomes.every(function (n, i) { return n !== r[i]; })) return r;
+function validarNomes_(nomes) {
+  if (!Array.isArray(nomes)) throw erroUsuario_("Lista de participantes inválida.");
+  var lista = nomes.map(limparNome_).filter(Boolean);
+  if (lista.length < MIN_PARTICIPANTES || lista.length > MAX_PARTICIPANTES) {
+    throw erroUsuario_("O sorteio precisa ter de " + MIN_PARTICIPANTES + " a " + MAX_PARTICIPANTES + " participantes.");
   }
-  throw erroUsuario("Não foi possível concluir o sorteio. Tente novamente.");
+  if (lista.some(function (n) { return n.length > 80; })) {
+    throw erroUsuario_("Cada nome pode ter no máximo 80 caracteres.");
+  }
+  // Evita que a planilha interprete um nome como fórmula.
+  if (lista.some(function (n) { return /^[=+\-@]/.test(n); })) {
+    throw erroUsuario_("Os nomes não podem começar com =, +, - ou @.");
+  }
+  if (new Set(lista.map(normalizarNome_)).size !== lista.length) {
+    throw erroUsuario_("Há nomes repetidos. Maiúsculas e acentos não contam como diferença: use sobrenomes para diferenciar.");
+  }
+  return lista;
+}
+
+function participanteDoSorteio_(nome) {
+  var p = buscarParticipante_(String(nome || ""));
+  if (!p) throw erroUsuario_("Participante não encontrado. Atualize a página e tente de novo.");
+  return p;
+}
+
+/** Resumo para o organizador: quem já viu e quem está bloqueado. Nunca inclui os pares. */
+function situacao_() {
+  var lista = lerParticipantes_();
+  return {
+    existe: lista.length > 0,
+    url: ScriptApp.getService().getUrl(),
+    participantes: lista.map(function (p) {
+      return { nome: p.nome, revelou: Boolean(p.revelado), bloqueado: p.tentativas >= MAX_TENTATIVAS };
+    }),
+  };
+}
+
+function agora_() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
 }

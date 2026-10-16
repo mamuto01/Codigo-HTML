@@ -1,0 +1,317 @@
+<script>
+  const MAX_PARTICIPANTES = 10;
+  // A chave do organizador fica só na memória desta aba; os códigos nunca são guardados.
+  const estado = { chave: "", url: "", codigos: {} };
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- utilidades ----------
+
+  function chamarServidor(funcao, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler((erro) => reject(new Error(mensagemDeErro(erro))))[funcao](...args);
+    });
+  }
+
+  function mensagemDeErro(erro) {
+    const texto = (erro && erro.message) || String(erro || "");
+    return texto.replace(/^(Exception|Error|Erro):\s*/i, "") || "Não foi possível completar a ação.";
+  }
+
+  function mostrar(id, visivel) {
+    $(id).classList.toggle("hidden", !visivel);
+  }
+
+  function aviso(id, texto, tipo = "info") {
+    const el = $(id);
+    el.textContent = texto;
+    el.className = `notice show ${tipo}`;
+  }
+
+  function limparAviso(id) {
+    const el = $(id);
+    el.textContent = "";
+    el.className = "notice";
+  }
+
+  function elemento(tag, classe, texto) {
+    const el = document.createElement(tag);
+    if (classe) el.className = classe;
+    if (texto !== undefined) el.textContent = texto;
+    return el;
+  }
+
+  function botaoMini(texto, aoClicar) {
+    const botao = elemento("button", "btn-mini", texto);
+    botao.type = "button";
+    botao.addEventListener("click", () => aoClicar(botao));
+    return botao;
+  }
+
+  /** Desativa o botão e troca o texto enquanto a ação roda. */
+  async function ocupado(botao, texto, acao) {
+    const original = botao.textContent;
+    botao.disabled = true;
+    botao.textContent = texto;
+    try {
+      return await acao();
+    } finally {
+      botao.disabled = false;
+      botao.textContent = original;
+    }
+  }
+
+  /** Ações que não têm volta pedem um segundo clique em até 5 segundos. */
+  function comConfirmacao(botao, textoConfirmar, acao) {
+    if (botao.dataset.confirmando) {
+      cancelarConfirmacao(botao);
+      return acao();
+    }
+    botao.dataset.original = botao.textContent;
+    botao.dataset.confirmando = "1";
+    botao.textContent = textoConfirmar;
+    botao.classList.add("confirm");
+    setTimeout(() => cancelarConfirmacao(botao), 5000);
+  }
+
+  function cancelarConfirmacao(botao) {
+    if (!botao.dataset.confirmando) return;
+    delete botao.dataset.confirmando;
+    botao.classList.remove("confirm");
+    botao.textContent = botao.dataset.original;
+  }
+
+  async function copiarTexto(texto) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch (_) {
+      // A página roda dentro de um iframe do Google; se a API for bloqueada, usa o método antigo.
+      const area = elemento("textarea");
+      area.value = texto;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (_) {}
+      area.remove();
+      return ok;
+    }
+  }
+
+  // ---------- abas ----------
+
+  function trocarAba(qual) {
+    ["participar", "organizar"].forEach((aba) => {
+      const ativa = aba === qual;
+      mostrar(aba, ativa);
+      $("aba-" + aba).classList.toggle("active", ativa);
+      $("aba-" + aba).setAttribute("aria-selected", String(ativa));
+    });
+  }
+  $("aba-participar").addEventListener("click", () => trocarAba("participar"));
+  $("aba-organizar").addEventListener("click", () => trocarAba("organizar"));
+
+  // ---------- participante ----------
+
+  $("form-revelar").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    limparAviso("aviso-participar");
+    mostrar("resultado", false);
+    const nome = $("nome").value.trim();
+    const pin = $("pin").value.trim();
+    if (!nome || !pin) return aviso("aviso-participar", "Preencha seu nome e seu código pessoal.", "erro");
+
+    await ocupado($("btn-revelar"), "Consultando seu resultado...", async () => {
+      try {
+        const r = await chamarServidor("revelarAmigo", nome, pin);
+        $("resultado-quem").textContent = r.nome;
+        $("resultado-amigo").textContent = r.amigo;
+        $("pin").value = "";
+        mostrar("resultado", true);
+      } catch (erro) {
+        aviso("aviso-participar", erro.message, "erro");
+      }
+    });
+  });
+
+  $("btn-esconder").addEventListener("click", () => {
+    mostrar("resultado", false);
+    $("resultado-amigo").textContent = "";
+  });
+
+  // ---------- organizador ----------
+
+  $("form-entrar").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    limparAviso("aviso-organizar");
+    const chave = $("chave").value;
+    if (!chave) return aviso("aviso-organizar", "Digite a chave do organizador.", "erro");
+
+    await ocupado($("btn-entrar"), "Entrando...", async () => {
+      try {
+        const r = await chamarServidor("entrarOrganizador", chave);
+        estado.chave = chave;
+        $("chave").value = "";
+        mostrar("org-entrar", false);
+        mostrar("btn-sair", true);
+        mostrarSituacao(r.situacao);
+      } catch (erro) {
+        aviso("aviso-organizar", erro.message, "erro");
+      }
+    });
+  });
+
+  function nomesDigitados() {
+    return $("nomes").value.split(/\r?\n/).map((n) => n.trim().replace(/\s+/g, " ")).filter(Boolean);
+  }
+
+  function atualizarContador() {
+    const total = nomesDigitados().length;
+    $("contador").textContent = `${total} de ${MAX_PARTICIPANTES} participantes`;
+    $("contador").classList.toggle("over", total > MAX_PARTICIPANTES);
+  }
+  $("nomes").addEventListener("input", atualizarContador);
+
+  $("btn-criar").addEventListener("click", async () => {
+    limparAviso("aviso-organizar");
+    const nomes = nomesDigitados();
+    if (nomes.length < 3) return aviso("aviso-organizar", "Adicione pelo menos 3 participantes.", "erro");
+    if (nomes.length > MAX_PARTICIPANTES) {
+      return aviso("aviso-organizar", `O sorteio aceita até ${MAX_PARTICIPANTES} participantes.`, "erro");
+    }
+
+    await ocupado($("btn-criar"), "Sorteando...", async () => {
+      try {
+        const r = await chamarServidor("criarSorteio", estado.chave, nomes);
+        $("nomes").value = "";
+        atualizarContador();
+        guardarCodigos(r.codigos);
+        mostrarSituacao(r.situacao);
+        aviso("aviso-organizar", "Sorteio feito! Agora envie cada código só para a pessoa indicada.");
+        $("org-codigos").scrollIntoView({ behavior: "smooth" });
+      } catch (erro) {
+        aviso("aviso-organizar", erro.message, "erro");
+      }
+    });
+  });
+
+  async function acaoOrganizador(botao, carregando, funcao, nome, sucesso) {
+    limparAviso("aviso-organizar");
+    await ocupado(botao, carregando, async () => {
+      try {
+        const r = await chamarServidor(funcao, estado.chave, nome);
+        if (r.codigos) guardarCodigos(r.codigos);
+        mostrarSituacao(r.situacao);
+        aviso("aviso-organizar", sucesso);
+      } catch (erro) {
+        aviso("aviso-organizar", erro.message, "erro");
+      }
+    });
+  }
+
+  function mostrarSituacao(situacao) {
+    estado.url = situacao.url || "";
+    if (!situacao.existe) estado.codigos = {};
+    mostrar("org-criar", !situacao.existe);
+    mostrar("org-painel", situacao.existe);
+    desenharCodigos();
+
+    const pessoas = situacao.participantes;
+    const viram = pessoas.filter((p) => p.revelou).length;
+    $("resumo").textContent = `${viram} de ${pessoas.length} participantes já descobriram quem tiraram.`;
+
+    const lista = $("lista-situacao");
+    lista.replaceChildren();
+    pessoas.forEach((p) => {
+      const linha = elemento("div", "row");
+      const selos = elemento("div");
+      selos.append(p.revelou ? elemento("span", "badge ok", "Já viu ✅") : elemento("span", "badge wait", "Ainda não viu"));
+      if (p.bloqueado) selos.append(elemento("span", "badge lock", "Bloqueado 🔒"));
+
+      const acoes = elemento("div", "row-actions");
+      if (p.bloqueado) {
+        acoes.append(botaoMini("Desbloquear", (b) =>
+          acaoOrganizador(b, "Liberando...", "desbloquearParticipante", p.nome, `O acesso de ${p.nome} foi liberado.`)));
+      }
+      acoes.append(botaoMini("Novo código", (b) =>
+        comConfirmacao(b, "Confirmar novo código?", () =>
+          acaoOrganizador(b, "Gerando...", "gerarNovoCodigo", p.nome,
+            `Novo código gerado para ${p.nome}. O código antigo parou de funcionar.`))));
+
+      linha.append(elemento("div", "row-name", p.nome), selos, acoes);
+      lista.append(linha);
+    });
+  }
+
+  function guardarCodigos(codigos) {
+    codigos.forEach((c) => { estado.codigos[c.nome] = c.pin; });
+  }
+
+  function mensagemConvite(nome, pin) {
+    const link = estado.url ? `\nAcesse: ${estado.url}` : "";
+    return `Olá, ${nome}! 🎁\nSeu código do Amigo Secreto é: ${pin}${link}\n` +
+      "Digite seu nome e esse código para descobrir quem você tirou.\nNão mostre este código para ninguém 🤫";
+  }
+
+  function desenharCodigos() {
+    const nomes = Object.keys(estado.codigos);
+    mostrar("org-codigos", nomes.length > 0);
+    const lista = $("lista-codigos");
+    lista.replaceChildren();
+    nomes.forEach((nome) => {
+      const pin = estado.codigos[nome];
+      const convite = mensagemConvite(nome, pin);
+
+      const acoes = elemento("div", "row-actions");
+      acoes.append(botaoMini("Copiar mensagem", async (b) => {
+        const ok = await copiarTexto(convite);
+        b.textContent = ok ? "Copiado ✓" : "Não deu para copiar";
+        setTimeout(() => { b.textContent = "Copiar mensagem"; }, 2000);
+      }));
+      const whats = elemento("a", "btn-mini whats", "WhatsApp");
+      whats.href = "https://wa.me/?text=" + encodeURIComponent(convite);
+      whats.target = "_blank";
+      whats.rel = "noopener";
+      acoes.append(whats);
+
+      const linha = elemento("div", "row");
+      linha.append(elemento("div", "row-name", nome), elemento("div", "pin", pin), acoes);
+      lista.append(linha);
+    });
+  }
+
+  $("btn-apagar").addEventListener("click", (evento) => {
+    const botao = evento.currentTarget;
+    comConfirmacao(botao, "Clique de novo para apagar tudo", () =>
+      ocupado(botao, "Apagando...", async () => {
+        limparAviso("aviso-organizar");
+        try {
+          const r = await chamarServidor("apagarSorteio", estado.chave);
+          mostrarSituacao(r.situacao);
+          aviso("aviso-organizar", "Sorteio apagado. Você já pode fazer um novo.");
+        } catch (erro) {
+          aviso("aviso-organizar", erro.message, "erro");
+        }
+      }));
+  });
+
+  $("btn-sair").addEventListener("click", () => {
+    estado.chave = "";
+    estado.codigos = {};
+    ["org-criar", "org-codigos", "org-painel", "btn-sair"].forEach((id) => mostrar(id, false));
+    mostrar("org-entrar", true);
+    limparAviso("aviso-organizar");
+  });
+
+  // Os códigos só existem nesta tela: avisa antes de fechar com códigos na lista.
+  window.addEventListener("beforeunload", (evento) => {
+    if (Object.keys(estado.codigos).length) {
+      evento.preventDefault();
+      evento.returnValue = "";
+    }
+  });
+</script>

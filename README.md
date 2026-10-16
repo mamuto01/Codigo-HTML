@@ -1,59 +1,78 @@
-# Amigo Secreto do Zero 🎁
+# Amigo Secreto 🎁 — Google Apps Script
 
-Site responsivo para até 10 participantes, com um único link, códigos pessoais e resultados persistentes.
-O site fica no Netlify e os dados ficam numa **planilha Google**, acessada por um **Google Apps Script**.
+Site de amigo secreto feito **inteiramente no Google Apps Script**. O próprio Apps Script publica o site
+(App da Web) e os dados ficam numa **planilha Google**. Não é preciso Netlify, Supabase nem hospedagem.
 
-## Arquivos
+- Até 10 participantes, um único link para todos.
+- Cada pessoa recebe um código pessoal de 6 números e vê **só o próprio resultado**.
+- O organizador acompanha quem já viu, gera um código novo para quem perdeu o seu e libera quem ficou bloqueado. Ele nunca vê os pares.
+- Botões para copiar a mensagem de cada pessoa ou enviá-la direto pelo WhatsApp.
 
-- `index.html`: interface do site.
-- `app.js`: lógica do navegador (só envia pedidos ao Apps Script).
-- `apps-script/Codigo.gs`: backend que faz o sorteio, guarda os dados na planilha e revela os resultados.
+## Arquivos (pasta `apps-script/`)
 
-## Segurança e privacidade
+| Arquivo | O que faz |
+|---|---|
+| `Codigo.gs` | Abre a página, tem a função `configurar` e as funções chamadas pelo site |
+| `Planilha.gs` | Lê e grava os participantes na planilha |
+| `Seguranca.gs` | Sorteio, geração de códigos, hash e cifra |
+| `Index.html` | Estrutura da página |
+| `Estilos.html` | Visual (CSS) |
+| `Script.html` | Comportamento da página (JavaScript) |
+| `appsscript.json` | Manifesto do projeto: fuso horário e opções do App da Web |
 
-- **O sorteio é feito no servidor** (Apps Script). O navegador do organizador recebe só a lista de códigos, nunca os pares.
-- **Os códigos pessoais não ficam na planilha.** Cada código é guardado como hash SHA-256 com um salt aleatório por pessoa.
-- **Tentativas limitadas:** depois de 10 códigos errados para o mesmo nome, aquele nome fica bloqueado. Assim ninguém consegue testar códigos até acertar o de outra pessoa.
-- **A chave do organizador fica no Apps Script** (propriedade `ORGANIZER_KEY`), não no site. Só quem a conhece cria o sorteio.
-- **Limitação:** o dono da planilha consegue ver os pares abrindo a aba `Participantes`. Se o organizador também vai participar, peça para outra pessoa criar e guardar a planilha, ou combine de não abrir essa aba.
+## Como montar
 
-## Configuração
+### 1. Criar o projeto
+Escolha **uma** das opções:
+- **Com a planilha junto (recomendado):** crie uma planilha em https://sheets.new e abra **Extensões → Apps Script**.
+- **Projeto independente:** crie em https://script.new. A função `configurar` cria a planilha de dados sozinha.
 
-### 1. Criar a planilha e o Apps Script
-1. Acesse https://sheets.new e crie uma planilha (ex.: "Amigo Secreto").
-2. No menu, abra **Extensões → Apps Script**.
-3. Apague o conteúdo do arquivo `Código.gs` e cole todo o conteúdo de `apps-script/Codigo.gs`. Salve.
-4. No seletor de funções no topo, escolha **`configurar`** e clique em **Executar**. Autorize o acesso quando o Google pedir (é o seu próprio script acessando a sua planilha). As abas `Sorteio` e `Participantes` serão criadas.
+### 2. Copiar os arquivos
+No editor do Apps Script:
+1. Apague o conteúdo do arquivo `Código.gs` e cole o conteúdo de `Codigo.gs`.
+2. Clique em **+ → Script** e crie `Planilha` e `Seguranca`. Cole o conteúdo de cada arquivo `.gs` correspondente.
+3. Clique em **+ → HTML** e crie `Index`, `Estilos` e `Script`. Cole o conteúdo de cada arquivo `.html` correspondente.
+   Os nomes precisam ser exatamente esses, porque o `Index` inclui os outros dois pelo nome.
+4. (Opcional) Em **Configurações do projeto**, marque "Mostrar arquivo de manifesto appsscript.json" e cole o conteúdo de `appsscript.json`.
+5. Salve (Ctrl+S).
 
-### 2. Definir a chave do organizador
-1. No Apps Script, clique em **Configurações do projeto** (ícone de engrenagem).
-2. Em **Propriedades do script**, adicione:
-   - Propriedade: `ORGANIZER_KEY`
-   - Valor: uma chave forte com pelo menos 12 caracteres.
-3. Salve.
+> Quem usa o [clasp](https://github.com/google/clasp) pode configurar o `rootDir` como `apps-script` e enviar tudo com `clasp push`.
 
-### 3. Publicar o Apps Script como App da Web
+### 3. Configurar
+1. No seletor de funções, no topo do editor, escolha **`configurar`** e clique em **Executar**.
+2. Autorize quando o Google pedir. É o seu próprio script acessando a sua planilha.
+   Se aparecer "O Google não verificou este app", clique em **Avançado → Acessar (não seguro)**. Isso é normal em scripts pessoais.
+3. No **Registro de execução** aparecem o link da planilha e a **chave do organizador**. Guarde essa chave.
+
+### 4. Publicar o site
 1. Clique em **Implantar → Nova implantação**.
-2. Em "Selecionar tipo", escolha **App da Web**.
+2. Em "Selecionar tipo" (engrenagem), escolha **App da Web**.
 3. **Executar como:** Eu. **Quem pode acessar:** Qualquer pessoa.
-4. Clique em **Implantar** e copie a **URL do app da Web** (termina em `/exec`).
+4. Clique em **Implantar** e copie a **URL do app da Web**, que termina em `/exec`. Esse é o link do site.
 
-> Se depois você alterar o `Codigo.gs`, use **Implantar → Gerenciar implantações → editar (lápis) → Versão: Nova versão** para manter a mesma URL.
-
-### 4. Configurar e publicar o site
-1. Abra `app.js` e troque `COLE_AQUI_A_URL_DO_APPS_SCRIPT` pela URL copiada.
-2. Publique `index.html` e `app.js` (na mesma pasta) no Netlify: arraste os dois em https://app.netlify.com/drop, ou conecte este repositório.
-3. Envie o link do Netlify para todos.
+> Ao alterar o código depois, use **Implantar → Gerenciar implantações → ✏️ → Versão: Nova versão**. Assim o link continua o mesmo.
 
 ## Como usar
-1. Abra a aba **Organizador**.
-2. Digite a chave definida em `ORGANIZER_KEY`.
-3. Cole de 3 a 10 nomes únicos, um por linha.
-4. Clique em **Criar sorteio e gerar códigos**.
-5. Entregue cada código em particular para a pessoa indicada. Não envie a lista inteira no grupo.
-6. Cada participante abre o mesmo link, informa o nome e o código e revela o resultado. Maiúsculas, acentos e espaços extras no nome não atrapalham.
+1. Abra o link e vá na aba **Organizador**. Digite a chave do organizador.
+2. Cole de 3 a 10 nomes, um por linha, e clique em **Fazer o sorteio e gerar códigos**.
+3. Envie a mensagem de cada pessoa **em particular**, pelo botão **WhatsApp** ou **Copiar mensagem**.
+   Os códigos não ficam guardados em lugar nenhum: envie antes de fechar a página.
+4. Cada participante abre o mesmo link, digita o nome e o código e descobre quem tirou.
+   Maiúsculas, acentos e espaços extras no nome não atrapalham.
 
-## Manutenção pela planilha
-- **Liberar um nome bloqueado:** na aba `Participantes`, troque o valor da coluna `tentativas_erradas` daquela pessoa para `0`.
-- **Fazer um novo sorteio:** apague as linhas das abas `Sorteio` e `Participantes`, mantendo a primeira linha (cabeçalho). Depois crie o sorteio de novo pelo site.
-- **Pessoa perdeu o código:** não é possível recuperá-lo, pois ele não fica guardado. Será preciso fazer um novo sorteio.
+Na área do organizador também dá para:
+- **Acompanhar** quem já viu o resultado.
+- **Gerar novo código** para quem perdeu o seu. O amigo secreto da pessoa continua o mesmo e o código antigo para de funcionar.
+- **Desbloquear** quem errou o código 10 vezes.
+- **Apagar o sorteio** e começar de novo.
+
+## Segurança
+- O **sorteio é feito no servidor**. O navegador recebe só os códigos, nunca os pares.
+- Os **códigos não ficam na planilha**: só um hash SHA-256 com salt diferente para cada pessoa.
+- O **amigo secreto fica cifrado** na planilha (coluna `amigo_cifrado`). Quem abre a planilha não vê os pares.
+- **Tentativas limitadas:** 10 códigos errados bloqueiam aquele nome, e 20 chaves de organizador erradas travam a área do organizador por 15 minutos.
+- A chave do organizador e o segredo da cifra ficam em **Configurações do projeto → Propriedades do script**
+  (`ORGANIZER_KEY` e `SEGREDO_INTERNO`). Para trocar a chave do organizador, edite `ORGANIZER_KEY` (mínimo de 12 caracteres).
+  **Não apague nem altere `SEGREDO_INTERNO`** com um sorteio em andamento, ou os resultados não poderão mais ser lidos.
+- **Limitação:** o dono do projeto é quem tem acesso técnico total. Ele poderia escrever um código para decifrar os pares.
+  A proteção impede que alguém veja os pares sem querer, mas não protege contra o próprio dono mal-intencionado.

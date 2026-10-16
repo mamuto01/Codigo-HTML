@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <?!= incluir_("Estilos"); ?>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="ornament">🎄 ✨ 🎁</div>
+      <div class="eyebrow">Uma surpresa está chegando</div>
+      <h1>Amigo Secreto</h1>
+      <p class="subtitle">Um nome, um presente e uma boa história para lembrar. Que comece a magia! ❤️</p>
+    </header>
+
+    <main class="card">
+      <div class="tabs" role="tablist" aria-label="Área do site">
+        <button class="tab active" id="aba-participar" type="button" role="tab" aria-selected="true" aria-controls="participar">🎁 Participar</button>
+        <button class="tab" id="aba-organizar" type="button" role="tab" aria-selected="false" aria-controls="organizar">🔐 Organizador</button>
+      </div>
+
+      <!-- Participante -->
+      <section id="participar" role="tabpanel" aria-labelledby="aba-participar">
+        <h2>Descubra quem você tirou</h2>
+        <p class="hint">Digite seu nome e o código pessoal que o organizador te enviou. Você pode voltar aqui e consultar de novo quando quiser.</p>
+        <form id="form-revelar" novalidate>
+          <label for="nome">Seu nome</label>
+          <input id="nome" autocomplete="name" placeholder="Ex.: Ana Silva">
+          <label for="pin">Seu código pessoal</label>
+          <input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Código de 6 números">
+          <button class="btn" id="btn-revelar" type="submit">Revelar meu amigo secreto ✨</button>
+        </form>
+        <div id="resultado" class="result hidden" aria-live="polite">
+          <div class="small">Olá, <span id="resultado-quem"></span>! Seu amigo secreto é...</div>
+          <div class="result-name" id="resultado-amigo"></div>
+          <p>Guarde esse segredo até o grande dia 🤫</p>
+          <button class="btn ghost" id="btn-esconder" type="button">Esconder resultado</button>
+        </div>
+        <div id="aviso-participar" class="notice" role="status"></div>
+      </section>
+
+      <!-- Organizador -->
+      <section id="organizar" class="hidden" role="tabpanel" aria-labelledby="aba-organizar">
+        <div id="org-entrar">
+          <h2>Área do organizador</h2>
+          <p class="hint">Digite a chave do organizador. Ela aparece no registro de execução da função <b>configurar</b>, no Apps Script.</p>
+          <form id="form-entrar" novalidate>
+            <label for="chave">Chave do organizador</label>
+            <input id="chave" type="password" autocomplete="current-password">
+            <button class="btn green" id="btn-entrar" type="submit">Entrar</button>
+          </form>
+        </div>
+
+        <div id="org-criar" class="hidden">
+          <h2>Preparar o sorteio</h2>
+          <p class="hint">Cole de 3 a 10 nomes, um por linha. O sorteio é feito no servidor e cada pessoa recebe um código pessoal.</p>
+          <label for="nomes">Participantes (um nome por linha)</label>
+          <textarea id="nomes" placeholder="Ana Silva&#10;Bruno Costa&#10;Carla Souza"></textarea>
+          <div class="counter" id="contador">0 de 10 participantes</div>
+          <button class="btn green" id="btn-criar" type="button">Fazer o sorteio e gerar códigos</button>
+        </div>
+
+        <div id="org-codigos" class="hidden">
+          <h2>Códigos para entregar</h2>
+          <p class="hint">Envie cada código <b>só para a pessoa indicada</b>. Os códigos não ficam guardados em lugar nenhum: envie agora. Se alguém perder o seu, gere um novo abaixo.</p>
+          <div id="lista-codigos"></div>
+          <hr class="sep">
+        </div>
+
+        <div id="org-painel" class="hidden">
+          <h2>Acompanhar o sorteio</h2>
+          <p class="summary" id="resumo"></p>
+          <p class="hint">Os pares sorteados nunca aparecem aqui.</p>
+          <div id="lista-situacao"></div>
+          <button class="btn danger" id="btn-apagar" type="button">Apagar sorteio e começar de novo</button>
+        </div>
+
+        <div id="aviso-organizar" class="notice" role="status"></div>
+        <button class="link hidden" id="btn-sair" type="button">Sair da área do organizador</button>
+      </section>
+
+      <div class="steps">
+        <div class="step"><strong>01 🎄</strong>O organizador cadastra os nomes.</div>
+        <div class="step"><strong>02 🔑</strong>Cada pessoa recebe seu código privado.</div>
+        <div class="step"><strong>03 🤫</strong>Cada um revela somente seu próprio resultado.</div>
+      </div>
+    </main>
+
+    <footer class="foot">Feito para compartilhar alegria — e manter o segredo. ✨</footer>
+  </div>
+  <?!= incluir_("Script"); ?>
+</body>
+</html>
