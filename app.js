@@ -1,16 +1,7 @@
-// Configure estes dois valores no painel Supabase antes de publicar.
-const SUPABASE_URL = "COLE_AQUI_A_URL_DO_SEU_PROJETO";
-const SUPABASE_ANON_KEY = "COLE_AQUI_A_CHAVE_PUBLICA_ANON";
-let sb = null;
+// Cole aqui a URL do App da Web do Apps Script (termina em /exec). Veja o README.
+const APPS_SCRIPT_URL = "COLE_AQUI_A_URL_DO_APPS_SCRIPT";
 let latestCodes = [];
 
-function client() {
-  if (!SUPABASE_URL.startsWith("https://") || SUPABASE_ANON_KEY.startsWith("COLE_AQUI")) {
-    throw new Error("O site ainda não está conectado ao banco de dados. Siga o README para configurar o Supabase.");
-  }
-  if (!sb) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return sb;
-}
 function showTab(which) {
   document.getElementById("participar").classList.toggle("hidden", which !== "participar");
   document.getElementById("organizar").classList.toggle("hidden", which !== "organizar");
@@ -28,11 +19,20 @@ function hideNotice(id) {
   el.textContent = "";
 }
 async function callFunction(payload) {
-  const { data, error } = await client().functions.invoke("amigo-secreto", { body: payload });
-  if (error) {
-    let detail = error.message || "Falha ao comunicar com o serviço.";
-    try { if (error.context) { const j = await error.context.json(); if (j.error) detail = j.error; } } catch (_) {}
-    throw new Error(detail);
+  if (!APPS_SCRIPT_URL.startsWith("https://script.google.com/")) {
+    throw new Error("O site ainda não está conectado à planilha. Siga o README para configurar o Apps Script.");
+  }
+  let res;
+  try {
+    // Sem cabeçalhos personalizados: o corpo vai como text/plain e o navegador
+    // não faz a checagem prévia de CORS, que o Apps Script não aceita.
+    res = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+  } catch (_) {
+    throw new Error("Falha ao comunicar com o serviço. Verifique sua internet e tente de novo.");
+  }
+  let data;
+  try { data = await res.json(); } catch (_) {
+    throw new Error("O serviço respondeu de forma inesperada. Confira se a implantação do Apps Script permite acesso a \"Qualquer pessoa\".");
   }
   if (data && data.error) throw new Error(data.error);
   return data;
@@ -56,52 +56,23 @@ async function reveal() {
     btn.disabled = false; btn.textContent = "Revelar meu amigo secreto ✨";
   }
 }
-function randomPin() {
-  const a = new Uint32Array(1);
-  crypto.getRandomValues(a);
-  return String(100000 + (a[0] % 900000));
-}
-function secureShuffle(array) {
-  const a = [...array];
-  for (let i = a.length - 1; i > 0; i--) {
-    const rand = new Uint32Array(1);
-    const max = 0x100000000;
-    const limit = max - (max % (i + 1));
-    let x;
-    do { crypto.getRandomValues(rand); x = rand[0]; } while (x >= limit);
-    const j = x % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-function makeDerangement(names) {
-  // Fisher-Yates até encontrar uma permutação sem ninguém tirar a si mesmo.
-  // Para até 10 pessoas, isto é rápido; limite de tentativas como proteção.
-  for (let attempt = 0; attempt < 100000; attempt++) {
-    const shuffled = secureShuffle(names);
-    if (names.every((n, i) => n !== shuffled[i])) return shuffled;
-  }
-  throw new Error("Não foi possível concluir o sorteio. Tente novamente.");
-}
 async function createDraw() {
   hideNotice("organizerNotice");
   document.getElementById("codesArea").classList.add("hidden");
   const key = document.getElementById("organizerKey").value;
   const names = document.getElementById("names").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-  if (key.length < 12) return notice("organizerNotice", "Use uma chave do organizador com pelo menos 12 caracteres.", "error");
+  if (!key) return notice("organizerNotice", "Digite a chave do organizador.", "error");
   if (names.length < 3) return notice("organizerNotice", "Adicione pelo menos 3 participantes para fazer o sorteio.", "error");
   if (names.length > 10) return notice("organizerNotice", "Este site está configurado para até 10 participantes.", "error");
-  const normalized = names.map(n => n.toLocaleLowerCase("pt-BR"));
+  const normalized = names.map(n => n.replace(/\s+/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR"));
   if (new Set(normalized).size !== names.length) return notice("organizerNotice", "Há nomes repetidos. Deixe cada participante com um nome único.", "error");
   if (names.some(n => n.length > 80)) return notice("organizerNotice", "Cada nome deve ter até 80 caracteres.", "error");
 
   const btn = document.getElementById("createBtn");
   btn.disabled = true; btn.textContent = "Preparando o sorteio...";
   try {
-    // Os pares são enviados para a função protegida; a interface do organizador não os exibe.
-    const targets = makeDerangement(names);
-    const participants = names.map((name, i) => ({ name, pin: randomPin(), assigned_name: targets[i] }));
-    const data = await callFunction({ action:"create", organizer_key:key, participants });
+    // O sorteio é feito no Apps Script: o navegador só recebe os códigos, nunca os pares.
+    const data = await callFunction({ action:"create", organizer_key:key, names });
     latestCodes = data.codes || [];
     const area = document.getElementById("codesList");
     area.innerHTML = "";

@@ -79,9 +79,9 @@
 
       <section id="organizar" class="hidden">
         <h2>Preparar o sorteio</h2>
-        <p class="hint">Cole até 10 nomes, um por linha. O sistema cria um código pessoal para cada pessoa e faz o sorteio uma única vez. Entregue cada código em particular ao participante correspondente.</p>
+        <p class="hint">Cole até 10 nomes, um por linha. O sistema faz o sorteio uma única vez e cria um código pessoal para cada pessoa. Entregue cada código em particular ao participante correspondente.</p>
         <label for="organizerKey">Chave do organizador</label>
-        <input id="organizerKey" type="password" autocomplete="current-password" placeholder="Defina uma chave forte para organizar">
+        <input id="organizerKey" type="password" autocomplete="current-password" placeholder="A chave definida no Apps Script (ORGANIZER_KEY)">
         <label for="names">Lista de participantes (um nome por linha)</label>
         <textarea id="names" placeholder="Ana Silva&#10;Bruno Costa&#10;Carla Souza"></textarea>
         <button class="btn green" id="createBtn" onclick="createDraw()">Criar sorteio e gerar códigos</button>
@@ -91,7 +91,7 @@
           <p class="hint">Copie ou anote cada código e envie somente para a pessoa indicada. Não publique esta lista no grupo.</p>
           <div id="codesList"></div>
           <button class="btn" onclick="copyCodes()">Copiar lista de códigos</button>
-          <p class="small-muted">A tela não mostra os pares sorteados. Ainda assim, quem administra o projeto de banco de dados pode ter acesso técnico aos dados armazenados; esta versão não oferece garantia criptográfica de anonimato contra o administrador da hospedagem.</p>
+          <p class="small-muted">O sorteio é feito no servidor e a tela não mostra os pares. Ainda assim, o dono da planilha consegue ver os pares abrindo a aba Participantes; esta versão não oferece garantia de anonimato contra ele.</p>
         </div>
       </section>
       <div class="steps">
@@ -100,9 +100,8 @@
         <div class="step"><strong>03 🤫</strong>Cada um revela somente seu próprio resultado.</div>
       </div>
     </main>
-    <footer class="foot">Feito para compartilhar alegria — e manter o segredo. ✨<br>Para funcionar online, configure o serviço Supabase conforme o README incluído no projeto.</footer>
+    <footer class="foot">Feito para compartilhar alegria — e manter o segredo. ✨<br>Para funcionar online, configure a planilha e o Apps Script conforme o README incluído no projeto.</footer>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
