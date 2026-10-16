@@ -12,7 +12,7 @@ function limparNome_(nome) {
 
 /** Chave de busca: ignora maiúsculas, acentos e espaços extras ("  JOAO " == "João"). */
 function normalizarNome_(nome) {
-  return limparNome_(nome).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return limparNome_(nome).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 // ---------- aleatoriedade ----------
