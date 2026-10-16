@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123d31">
+  <title>Amigo Secreto 🎁</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --green:#123d31; --green2:#1c5946; --cream:#fffaf0; --gold:#e9bd66; --red:#a83e3e; --ink:#17342b; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); font-family:"DM Sans",sans-serif; background:radial-gradient(circle at 10% 5%,#2e7658 0,transparent 27%),linear-gradient(145deg,#0c2f26,#174b3b 58%,#0d3027); padding:24px 14px 36px; }
+    .wrap { max-width:760px; margin:0 auto; }
+    .top { text-align:center; color:#fffaf0; padding:20px 10px 24px; }
+    .eyebrow { text-transform:uppercase; letter-spacing:.22em; font-size:.72rem; color:#f2dba9; font-weight:700; }
+    h1 { font-family:"Playfair Display",serif; font-size:clamp(2.3rem,8vw,4.1rem); line-height:1.05; margin:12px 0; color:#fffaf0; }
+    .subtitle { margin:0 auto; max-width:480px; color:#dcebe1; line-height:1.6; }
+    .ornament { font-size:2rem; margin-bottom:8px; }
+    .card { background:var(--cream); border:1px solid rgba(255,255,255,.25); border-radius:24px; padding:clamp(20px,5vw,34px); box-shadow:0 22px 70px #061b1680; }
+    .tabs { display:flex; gap:8px; padding:5px; border-radius:14px; background:#eae9dc; margin-bottom:24px; }
+    .tab { flex:1; border:0; border-radius:10px; padding:12px 8px; font:600 .92rem "DM Sans",sans-serif; background:transparent; color:#456055; cursor:pointer; }
+    .tab.active { color:white; background:var(--green); box-shadow:0 3px 8px #123d3128; }
+    h2 { font-family:"Playfair Display",serif; margin:0 0 8px; font-size:1.65rem; color:var(--green); }
+    .hint { color:#66776d; font-size:.93rem; line-height:1.55; margin:0 0 22px; }
+    label { display:block; font-size:.88rem; font-weight:700; margin:15px 0 7px; }
+    input, textarea { width:100%; border:1px solid #d7d9cc; background:#fffef9; border-radius:12px; padding:14px 15px; color:var(--ink); font:500 1rem "DM Sans",sans-serif; outline:none; }
+    input:focus, textarea:focus { border-color:#398366; box-shadow:0 0 0 3px #3983661c; }
+    textarea { min-height:140px; resize:vertical; line-height:1.6; }
+    .btn { width:100%; border:0; border-radius:13px; padding:15px 18px; margin-top:18px; background:var(--red); color:white; font:700 1rem "DM Sans",sans-serif; cursor:pointer; transition:transform .15s,opacity .15s; }
+    .btn:hover { transform:translateY(-1px); } .btn:disabled { opacity:.55; cursor:wait; transform:none; }
+    .btn.green { background:var(--green); }
+    .notice { margin-top:16px; border-radius:12px; padding:13px 14px; font-size:.92rem; line-height:1.5; display:none; white-space:pre-wrap; }
+    .notice.show { display:block; } .notice.info { background:#e9f1e9; color:#244f3d; } .notice.error { background:#fae9e4; color:#8d3027; }
+    .hidden { display:none !important; }
+    .participant-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .result { margin-top:22px; border-radius:18px; background:#123d31; color:#fffaf0; padding:28px 18px; text-align:center; }
+    .result .small { color:#e8d6a9; text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; }
+    .result-name { font-family:"Playfair Display",serif; font-size:clamp(2rem,7vw,3.2rem); margin:12px 0 8px; overflow-wrap:anywhere; }
+    .result p { color:#dcebe1; margin:0; }
+    .foot { color:#c7ded1; text-align:center; font-size:.8rem; line-height:1.6; padding:18px 10px 0; }
+    .small-muted { color:#77847b; font-size:.82rem; line-height:1.5; margin-top:12px; }
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
+    .step { border:1px solid #e1e2d7; border-radius:14px; padding:13px 10px; text-align:center; font-size:.8rem; color:#637267; line-height:1.45; }
+    .step strong { display:block; color:var(--green); font-size:1.1rem; margin-bottom:4px; }
+    @media(max-width:520px) { .participant-row { grid-template-columns:1fr; gap:0; } .steps { grid-template-columns:1fr; } .step { display:flex; align-items:center; gap:12px; text-align:left; } .step strong { margin:0; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="ornament">🎄 ✨ 🎁</div>
+      <div class="eyebrow">Uma surpresa está chegando</div>
+      <h1>Amigo Secreto</h1>
+      <p class="subtitle">Um nome, um presente e uma boa história para lembrar. Que comece a magia! ❤️</p>
+    </header>
+    <main class="card">
+      <div class="tabs" role="tablist" aria-label="Área do site">
+        <button class="tab active" id="tab-participar" type="button" onclick="showTab('participar')">🎁 Participar</button>
+        <button class="tab" id="tab-organizar" type="button" onclick="showTab('organizar')">🔐 Organizador</button>
+      </div>
+
+      <section id="participar">
+        <h2>Descubra quem você tirou</h2>
+        <p class="hint">Digite seu nome exatamente como foi cadastrado e seu código pessoal. Seu resultado fica guardado para você consultar novamente.</p>
+        <label for="participantName">Seu nome</label>
+        <input id="participantName" autocomplete="name" placeholder="Ex.: Ana Silva">
+        <label for="participantPin">Seu código pessoal</label>
+        <input id="participantPin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="Código que o organizador te entregou">
+        <button class="btn" id="revealBtn" onclick="reveal()">Revelar meu amigo secreto ✨</button>
+        <div id="result" class="result hidden" aria-live="polite">
+          <div class="small">Seu amigo secreto é...</div>
+          <div class="result-name" id="resultName"></div>
+          <p>Guarde esse segredo até o grande dia 🤫</p>
+        </div>
+        <div id="participantNotice" class="notice" role="status"></div>
+      </section>
+
+      <section id="organizar" class="hidden">
+        <h2>Preparar o sorteio</h2>
+        <p class="hint">Cole até 10 nomes, um por linha. O sistema cria um código pessoal para cada pessoa e faz o sorteio uma única vez. Entregue cada código em particular ao participante correspondente.</p>
+        <label for="organizerKey">Chave do organizador</label>
+        <input id="organizerKey" type="password" autocomplete="current-password" placeholder="Defina uma chave forte para organizar">
+        <label for="names">Lista de participantes (um nome por linha)</label>
+        <textarea id="names" placeholder="Ana Silva&#10;Bruno Costa&#10;Carla Souza"></textarea>
+        <button class="btn green" id="createBtn" onclick="createDraw()">Criar sorteio e gerar códigos</button>
+        <div id="organizerNotice" class="notice" role="status"></div>
+        <div id="codesArea" class="hidden">
+          <h2 style="margin-top:24px">Códigos para entregar em particular</h2>
+          <p class="hint">Copie ou anote cada código e envie somente para a pessoa indicada. Não publique esta lista no grupo.</p>
+          <div id="codesList"></div>
+          <button class="btn" onclick="copyCodes()">Copiar lista de códigos</button>
+          <p class="small-muted">A tela não mostra os pares sorteados. Ainda assim, quem administra o projeto de banco de dados pode ter acesso técnico aos dados armazenados; esta versão não oferece garantia criptográfica de anonimato contra o administrador da hospedagem.</p>
+        </div>
+      </section>
+      <div class="steps">
+        <div class="step"><strong>01 🎄</strong>O organizador cadastra os nomes.</div>
+        <div class="step"><strong>02 🔑</strong>Cada pessoa recebe seu código privado.</div>
+        <div class="step"><strong>03 🤫</strong>Cada um revela somente seu próprio resultado.</div>
+      </div>
+    </main>
+    <footer class="foot">Feito para compartilhar alegria — e manter o segredo. ✨<br>Para funcionar online, configure o serviço Supabase conforme o README incluído no projeto.</footer>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
